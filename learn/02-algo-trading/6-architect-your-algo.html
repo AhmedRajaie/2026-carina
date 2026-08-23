@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part 06 — Architect Your Algo Like a Mini Company | EFG Hermes Algo Track</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0e14;--bg2:#0f1620;--bg3:#141d2b;--card:#111827;--border:#1e2d42;
+  --gold:#c9a84c;--gold-light:#e8c96a;--teal:#2dd4bf;--teal-dim:#0d9488;
+  --red:#f87171;--green:#4ade80;--text:#e2e8f0;--text-dim:#94a3b8;--text-muted:#4a5568;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:15px;line-height:1.7;overflow-x:hidden;}
+
+/* BACK BUTTON */
+.back-btn{position:absolute;top:24px;left:24px;display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--text-muted);text-decoration:none;text-transform:uppercase;border:1px solid var(--border);padding:6px 14px;border-radius:2px;transition:all .2s;z-index:10;}
+.back-btn:hover{border-color:var(--gold);color:var(--gold);}
+.back-btn::before{content:'←';margin-right:2px;}
+
+/* HEADER */
+header{position:relative;padding:60px 0 80px;text-align:center;overflow:hidden;border-bottom:1px solid var(--border);}
+header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(201,168,76,.12) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 80% 50%,rgba(45,212,191,.06) 0%,transparent 60%);}
+.efg-logo{display:inline-flex;align-items:center;gap:10px;margin-bottom:32px;position:relative;}
+.efg-logo-mark{width:36px;height:36px;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:700;color:var(--gold);font-size:14px;letter-spacing:1px;}
+.efg-logo-text{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase;}
+.session-tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--teal);border:1px solid var(--teal-dim);padding:4px 14px;border-radius:2px;margin-bottom:20px;position:relative;}
+h1{font-family:'Playfair Display',serif;font-size:clamp(36px,5vw,64px);font-weight:900;line-height:1.1;position:relative;background:linear-gradient(135deg,#fff 30%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px;}
+.subtitle{color:var(--text-dim);font-size:16px;max-width:580px;margin:0 auto;position:relative;}
+.progress-bar-wrap{display:flex;justify-content:center;gap:6px;margin-top:40px;position:relative;}
+.prog-dot{width:32px;height:4px;border-radius:2px;background:var(--border);}
+.prog-dot.active{background:var(--gold);}
+.prog-dot.current{background:var(--teal);}
+
+/* LAYOUT */
+.container{max-width:960px;margin:0 auto;padding:0 24px;}
+.section{padding:64px 0;border-bottom:1px solid var(--border);}
+.section-num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:3px;margin-bottom:8px;display:block;}
+.section-title{font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:#fff;margin-bottom:8px;}
+.section-lead{color:var(--text-dim);font-size:15px;max-width:600px;margin-bottom:40px;}
+
+/* PROSE */
+.prose{color:var(--text-dim);font-size:15px;line-height:1.8;margin-bottom:28px;max-width:720px;}
+.prose strong{color:#fff;}
+.prose em{color:var(--gold);font-style:normal;}
+.prose + .prose{margin-top:-8px;}
+
+/* RULE / QUOTE BLOCK */
+.rule-block{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:4px;padding:28px 32px;margin-bottom:24px;}
+.rule-block blockquote{font-family:'IBM Plex Mono',monospace;font-size:14px;color:#fff;line-height:1.8;font-style:normal;}
+.rule-block blockquote strong{color:var(--gold);}
+
+/* CALLOUT */
+.callout{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:4px;padding:14px 20px;margin-bottom:24px;font-size:13px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;line-height:1.6;}
+.callout strong{color:#fff;}
+
+/* COMPANY ORG */
+.org-wrap{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:30px;margin-bottom:32px;position:relative;overflow:hidden;}
+.org-wrap::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 70% at 50% 0%,rgba(45,212,191,.05) 0%,transparent 70%);pointer-events:none;}
+.org-title{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;margin-bottom:24px;position:relative;}
+.org-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;position:relative;}
+.org-role{border:1px solid var(--border);background:rgba(10,14,20,.55);border-radius:4px;padding:18px 14px;text-align:center;min-height:150px;display:flex;flex-direction:column;justify-content:flex-start;}
+.org-role.risk{border-color:rgba(248,113,113,.35);background:rgba(248,113,113,.04);}
+.role-kicker{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:10px;}
+.org-role.risk .role-kicker{color:var(--red);}
+.role-name{font-family:'Playfair Display',serif;font-size:18px;color:#fff;line-height:1.15;margin-bottom:10px;}
+.role-desc{font-size:12px;color:var(--text-dim);line-height:1.45;}
+
+/* CARD GRID */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-bottom:32px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;position:relative;overflow:hidden;transition:border-color .2s,transform .2s;}
+.card:hover{border-color:var(--gold);transform:translateY(-2px);}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent);opacity:0;transition:opacity .2s;}
+.card:hover::before{opacity:1;}
+.card.risk:hover{border-color:var(--red);}
+.card.risk::before{background:linear-gradient(90deg,var(--red),transparent);}
+.card-label{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:10px;}
+.card.risk .card-label{color:var(--red);}
+.card-title{font-weight:600;color:#fff;margin-bottom:8px;font-size:15px;}
+.card-body{color:var(--text-dim);font-size:13px;line-height:1.6;}
+.card-body strong{color:#fff;}
+
+/* FLOW */
+.flow-row{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin-bottom:32px;}
+.flow-item{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:18px 20px;flex:1;min-width:130px;text-align:center;position:relative;}
+.flow-item.risk{border-color:rgba(248,113,113,.35);}
+.flow-item-label{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.flow-item.risk .flow-item-label{color:var(--red);}
+.flow-item-val{font-size:14px;color:#fff;font-weight:500;line-height:1.45;}
+.flow-arrow{color:var(--gold);font-size:20px;padding:18px 8px;flex-shrink:0;display:flex;align-items:center;}
+
+/* CODE TREE */
+.code-box{background:var(--card);border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-bottom:32px;}
+.code-head{padding:14px 20px;border-bottom:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;}
+pre{margin:0;padding:24px 28px;overflow-x:auto;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:1.8;background:var(--bg2);}
+pre strong{color:var(--gold);font-weight:500;}
+
+/* COMPARE */
+.compare-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px;}
+.compare-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px 28px;}
+.compare-label{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;margin-bottom:12px;text-transform:uppercase;}
+.compare-label.bad{color:var(--red);}
+.compare-label.good{color:var(--teal);}
+.compare-body{font-size:13px;color:var(--text-dim);line-height:1.65;}
+.compare-body strong{color:#fff;}
+
+/* TAKEAWAYS */
+.takeaway-wrap{background:linear-gradient(135deg,rgba(201,168,76,.06),rgba(45,212,191,.04));border:1px solid rgba(201,168,76,.25);border-radius:4px;padding:36px 40px;margin-top:16px;}
+.takeaway-heading{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:20px;}
+.takeaway-list{list-style:none;padding:0;}
+.takeaway-list li{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);font-size:14px;color:var(--text-dim);line-height:1.6;}
+.takeaway-list li:last-child{border-bottom:none;}
+.takeaway-list li::before{content:'✓';color:var(--teal);font-family:'IBM Plex Mono',monospace;font-size:12px;flex-shrink:0;margin-top:2px;}
+.takeaway-list li strong{color:#fff;}
+
+/* NEXT CARD */
+.next-card{background:linear-gradient(135deg,rgba(201,168,76,.08),rgba(45,212,191,.05));border:1px solid var(--gold);border-radius:4px;padding:32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;margin-top:40px;}
+.next-label{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;margin-bottom:8px;}
+.next-title{font-family:'Playfair Display',serif;font-size:22px;color:#fff;}
+.next-btn{background:var(--gold);color:#000;border:none;padding:12px 28px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1px;cursor:pointer;border-radius:2px;text-transform:uppercase;font-weight:500;transition:background .15s;}
+.next-btn:hover{background:var(--gold-light);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.section{animation:fadeUp .5s ease both;}
+
+@media(max-width:850px){
+  .org-grid{grid-template-columns:1fr 1fr;}
+  .org-role.risk{grid-column:1 / -1;}
+}
+@media(max-width:700px){
+  .compare-row{grid-template-columns:1fr;}
+  .flow-arrow{display:none;}
+}
+@media(max-width:520px){
+  .org-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <a class="back-btn" href="/learn/algo-track">Algo Track</a>
+  <div class="container">
+    <div class="efg-logo">
+      <div class="efg-logo-mark">EFG</div>
+      <div class="efg-logo-text">Hermes · Algo Track</div>
+    </div>
+    <div class="session-tag">PART 06 / 07</div>
+    <h1>Architect Your Algo<br>Like a Mini Company</h1>
+    <p class="subtitle">A serious algo is not one giant script. It is a small organization with clear roles, responsibilities, and authority.</p>
+    <div class="progress-bar-wrap">
+      <div class="prog-dot active"></div>
+      <div class="prog-dot active"></div>
+      <div class="prog-dot active"></div>
+      <div class="prog-dot active"></div>
+      <div class="prog-dot active"></div>
+      <div class="prog-dot current"></div>
+      <div class="prog-dot"></div>
+    </div>
+  </div>
+</header>
+
+<!-- INTRO -->
+<div class="section">
+  <div class="container">
+    <span class="section-num">01 — WHY THIS MATTERS</span>
+    <h2 class="section-title">Do Not Build One Giant Script</h2>
+    <p class="section-lead">Part 5 showed that live trading needs more than a strategy. Part 6 is about how to organize the system so it can be tested, monitored, and fixed.</p>
+
+    <p class="prose">The beginner version of an algo is often one file that does everything: reads prices, calculates signals, places orders, tracks positions, and decides risk. That is fine for a toy example. It is not fine once real money, real data, and real execution are involved.</p>
+
+    <p class="prose">A better mental model is a mini company. Each part of the system has one job. Each job has clear boundaries. The risk function has authority. If something breaks, you know where to look.</p>
+
+    <div class="rule-block">
+      <blockquote>A well-built algo is not clever because it is complicated.<br><br>It is safe because every component knows <strong>exactly what it is responsible for</strong>.</blockquote>
+    </div>
+  </div>
+</div>
+
+<!-- MINI COMPANY MAP -->
+<div class="section">
+  <div class="container">
+    <span class="section-num">02 — THE MINI COMPANY</span>
+    <h2 class="section-title">Five Roles Inside a Serious Algo</h2>
+    <p class="section-lead">Think of the system as a small organization. Each role does one thing well.</p>
+
+    <div class="org-wrap">
+      <div class="org-title">Algo System Org Chart</div>
+      <div class="org-grid">
+        <div class="org-role">
+          <div class="role-kicker">01</div>
+          <div class="role-name">Data Agent</div>
+          <div class="role-desc">Collects market data and checks whether it is fresh, complete, and usable.</div>
+        </div>
+        <div class="org-role">
+          <div class="role-kicker">02</div>
+          <div class="role-name">Research Agent</div>
+          <div class="role-desc">Turns raw data into indicators, signals, and strategy inputs.</div>
+        </div>
+        <div class="org-role">
+          <div class="role-kicker">03</div>
+          <div class="role-name">Execution Agent</div>
+          <div class="role-desc">Places, cancels, and tracks orders with the broker.</div>
+        </div>
+        <div class="org-role">
+          <div class="role-kicker">04</div>
+          <div class="role-name">Portfolio Manager</div>
+          <div class="role-desc">Decides sizing, exposure, rebalancing, and how positions fit together.</div>
+        </div>
+        <div class="org-role risk">
+          <div class="role-kicker">05</div>
+          <div class="role-name">Risk Officer</div>
+          <div class="role-desc">Monitors limits and has authority to pause or shut down the system.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      ↳ The Risk Officer is not “one more feature.” In a serious system, the Risk Officer outranks everyone.
+    </div>
+  </div>
+</div>
+
+<!-- ROLES DETAIL -->
+<div class="section">
+  <div class="container">
+    <span class="section-num">03 — ROLES</span>
+    <h2 class="section-title">What Each Role Actually Does</h2>
+    <p class="section-lead">The goal is separation of responsibility. One component should not secretly do another component’s job.</p>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-label">Data Agent</div>
+        <div class="card-title">The source of truth</div>
+        <div class="card-body">Ingests prices, volumes, corporate actions, and account data. It checks for missing candles, stale feeds, strange spikes, and whether the market is actually open.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Research Agent</div>
+        <div class="card-title">The signal factory</div>
+        <div class="card-body">Cleans and transforms data into signals: moving averages, volatility, momentum, mean reversion, filters, and anything else the strategy needs to make a decision.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Execution Agent</div>
+        <div class="card-title">The order desk</div>
+        <div class="card-body">Does not decide whether the idea is good. It receives an approved order instruction and handles the mechanics: place, cancel, retry, confirm, and reconcile.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Portfolio Manager</div>
+        <div class="card-title">The capital allocator</div>
+        <div class="card-body">Decides how much to commit, how many positions can coexist, whether the portfolio is overexposed, and whether new trades fit the existing book.</div>
+      </div>
+
+      <div class="card risk">
+        <div class="card-label">Risk Officer</div>
+        <div class="card-title">The authority to stop</div>
+        <div class="card-body">Checks position limits, daily loss, drawdown, abnormal fills, stale data, and broker errors. If the risk layer says stop, the rest of the system stops.</div>
+      </div>
+    </div>
+
+    <div class="rule-block">
+      <blockquote>The Execution Agent should not invent trades.<br>The Research Agent should not place orders.<br>The Portfolio Manager should not ignore risk limits.<br><br>Each role has a job. That is the architecture.</blockquote>
+    </div>
+  </div>
+</div>
+
+<!-- FLOW -->
+<div class="section">
+  <div class="container">
+    <span class="section-num">04 — SYSTEM FLOW</span>
+    <h2 class="section-title">How a Trade Moves Through the Company</h2>
+    <p class="section-lead">The trade should pass through a controlled sequence before it reaches the market.</p>
+
+    <div class="flow-row">
+      <div class="flow-item">
+        <div class="flow-item-label">Data</div>
+        <div class="flow-item-val">Prices update</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-item">
+        <div class="flow-item-label">Research</div>
+        <div class="flow-item-val">Signal fires</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-item">
+        <div class="flow-item-label">Portfolio</div>
+        <div class="flow-item-val">Size checked</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-item risk">
+        <div class="flow-item-label">Risk</div>
+        <div class="flow-item-val">Limits approved</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-item">
+        <div class="flow-item-label">Execution</div>
+        <div class="flow-item-val">Order sent</div>
+      </div>
+    </div>
+
+    <p class="prose">This order matters. The system should not send an order first and check risk afterward. It should not size a position without knowing current exposure. It should not trade on stale data. The architecture is the discipline.</p>
+
+    <div class="callout">
+      ↳ A good system makes the safe path the default path.
+    </div>
+  </div>
+</div>
+
+<!-- MONOLITH VS MODULAR -->
+<div class="section">
+  <div class="container">
+    <span class="section-num">05 — DESIGN CHOICE</span>
+    <h2 class="section-title">Monolith vs Modular System</h2>
+    <p class="section-lead">A single script is faster to start. A modular system is easier to trust.</p>
+
+    <div class="compare-row">
+      <div class="compare-card">
+        <div class="compare-label bad">One Giant Script</div>
+        <div class="compare-body">
+          <p><strong>Fast to build, hard to debug.</strong> Everything is tangled together. If the system places a bad trade, you may not know whether the issue came from data, signal logic, sizing, execution, or risk.</p>
+          <br>
+          <p>Good for a toy example. Dangerous as complexity grows.</p>
+        </div>
+      </div>
+
+      <div class="compare-card">
+        <div class="compare-label good">Modular System</div>
+        <div class="compare-body">
+          <p><strong>Slower to design, easier to maintain.</strong> Each component can be tested separately. You can replace the signal logic without rewriting execution. You can improve risk without touching data ingestion.</p>
+          <br>
+          <p>Good for systems you expect to keep alive.</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="prose">For beginners, the lesson is not “build enterprise software from day one.” The lesson is to keep the roles separate in your head, even when the first version is small. A small repo can still have clean boundaries.</p>
+  </div>
+</div>
+
+<!-- REPO MAP -->
+<div class="section">
+  <div class="container">
+    <span class="section-num">06 — BUILDER MAP</span>
+    <h2 class="section-title">How This Maps to a Repo</h2>
+    <p class="section-lead">The mini-company metaphor can become a folder structure. Not because folders are magic — because folders force clarity.</p>
+
+    <div class="code-box">
+      <div class="code-head">Example Starter Structure</div>
+      <pre><strong>/data</strong>
+  fetch_prices.py
+  validate_feed.py
+
+<strong>/research</strong>
+  indicators.py
+  signals.py
+
+<strong>/portfolio</strong>
+  sizing.py
+  exposure.py
+
+<strong>/risk</strong>
+  limits.py
+  kill_switch.py
+
+<strong>/execution</strong>
+  broker_client.py
+  orders.py
+  reconciliation.py
+
+<strong>/monitoring</strong>
+  logs.py
+  alerts.py
+
+<strong>/backtests</strong>
+  run_backtest.py
+  reports.py</pre>
+    </div>
+
+    <p class="prose">This is not the only possible structure. The point is the separation. Data code should be easy to find. Signal code should be separate from order placement. Risk checks should be visible, not hidden inside a random function. Logs and reports should be treated as part of the system, not an afterthought.</p>
+
+    <div class="rule-block">
+      <blockquote>Clean architecture is not about looking professional.<br><br>It is about making mistakes easier to find before they become expensive.</blockquote>
+    </div>
+  </div>
+</div>
+
+<!-- PROFESSIONAL MAPPING -->
+<div class="section">
+  <div class="container">
+    <span class="section-num">07 — WHY PROS DO THIS</span>
+    <h2 class="section-title">This Is How Serious Desks Think</h2>
+    <p class="section-lead">Professional quant and trading systems are organized around roles because specialization reduces hidden risk.</p>
+
+    <p class="prose">A trading desk may have researchers, traders, execution specialists, portfolio managers, risk teams, compliance, and operations. Your personal algo does not need a full organization. But the same logic applies: the system should separate idea generation, order placement, capital allocation, and risk authority.</p>
+
+    <p class="prose">That separation makes the system testable. You can ask: is the data clean? Is the signal firing correctly? Is sizing behaving as expected? Did the broker actually receive the order? Did the risk layer approve it? Each question has a place to live.</p>
+
+    <div class="callout">
+      ↳ Architecture is how you stop “the algo did something weird” from becoming an unsolvable sentence.
+    </div>
+  </div>
+</div>
+
+<!-- WHERE TO GO -->
+<div class="section">
+  <div class="container">
+    <span class="section-num">08 — WHERE TO GO FROM HERE</span>
+    <h2 class="section-title">The API Turns the Map Into a Playground</h2>
+    <p class="section-lead">Once the structure is clear, the next step is building small examples that connect to real market data and broker workflows.</p>
+
+    <p class="prose">This is where the EFG API matters. The articles explain the concepts. The repos should eventually show small working examples: fetching data, generating a signal, running a backtest, paper-trading a simple rule, placing controlled orders, and enforcing risk limits.</p>
+
+    <p class="prose">That repo layer is where students and builders can experiment. The article stays clean and conceptual. The code becomes a living thing that can be updated, debugged, improved, and forked.</p>
+
+    <div class="rule-block">
+      <blockquote>The article explains the concept.<br>The repo shows the working example.<br><br>Together, they turn the stock market into a builder playground.</blockquote>
+    </div>
+
+    <p class="prose">One final boundary matters: building your own tools to understand and trade your own account is one thing. Offering automated trading services to others is a different conversation. That brings regulatory, operational, and responsibility questions that sit outside this beginner track.</p>
+  </div>
+</div>
+
+<!-- SUMMARY / NEXT -->
+<div class="section" style="border-bottom:none;">
+  <div class="container">
+    <span class="section-num">09 — SUMMARY</span>
+    <h2 class="section-title">What You Should Now Understand</h2>
+    <p class="section-lead">Six things to carry into the final part.</p>
+
+    <div class="takeaway-wrap">
+      <div class="takeaway-heading">Key Takeaways — Part 06</div>
+      <ul class="takeaway-list">
+        <li>A serious algo should not be one giant script. It should have clear roles and boundaries.</li>
+        <li>The five core roles are <strong>Data Agent, Research Agent, Execution Agent, Portfolio Manager, and Risk Officer.</strong></li>
+        <li>The Risk Officer must outrank the strategy. If risk says stop, the system stops.</li>
+        <li>Clean architecture makes the system easier to test, debug, monitor, and improve.</li>
+        <li>A repo structure can mirror the architecture: data, research, portfolio, risk, execution, monitoring, and backtests.</li>
+        <li>The article explains the concept; the repo should eventually show the working example.</li>
+      </ul>
+    </div>
+
+    <div class="next-card">
+      <div>
+        <div class="next-label">NEXT — PART 07 / 07</div>
+        <div class="next-title">What AI Brings to Algo Trading<br><span style="font-size:16px;color:var(--text-dim);font-family:'IBM Plex Sans',sans-serif;font-weight:400;">What becomes possible when rules-based systems can read, adapt, and retrain.</span></div>
+      </div>
+      <button class="next-btn" onclick="window.location='/learn/algo-track/part-7'">Part 07 →</button>
+    </div>
+  </div>
+</div>
+
+<script src="/review-overlay.js"></script>
+</body>
+</html>

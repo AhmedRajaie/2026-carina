@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Algo Track | EFG Hermes Learn</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0e14;--bg2:#0f1620;--bg3:#141d2b;--card:#111827;--border:#1e2d42;
+  --gold:#c9a84c;--gold-light:#e8c96a;--teal:#2dd4bf;--teal-dim:#0d9488;
+  --red:#f87171;--green:#4ade80;--text:#e2e8f0;--text-dim:#94a3b8;--text-muted:#4a5568;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:15px;line-height:1.7;overflow-x:hidden;}
+
+/* BACK BUTTON */
+.back-btn{position:absolute;top:24px;left:24px;display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--text-muted);text-decoration:none;text-transform:uppercase;border:1px solid var(--border);padding:6px 14px;border-radius:2px;transition:all .2s;z-index:10;}
+.back-btn:hover{border-color:var(--gold);color:var(--gold);}
+.back-btn::before{content:'←';margin-right:2px;}
+
+/* HEADER */
+header{position:relative;padding:60px 0 86px;text-align:center;overflow:hidden;border-bottom:1px solid var(--border);}
+header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(201,168,76,.12) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 80% 50%,rgba(45,212,191,.06) 0%,transparent 60%);}
+.efg-logo{display:inline-flex;align-items:center;gap:10px;margin-bottom:32px;position:relative;}
+.efg-logo-mark{width:36px;height:36px;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:700;color:var(--gold);font-size:14px;letter-spacing:1px;}
+.efg-logo-text{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase;}
+.session-tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--teal);border:1px solid var(--teal-dim);padding:4px 14px;border-radius:2px;margin-bottom:20px;position:relative;}
+h1{font-family:'Playfair Display',serif;font-size:clamp(42px,6vw,76px);font-weight:900;line-height:1.02;position:relative;background:linear-gradient(135deg,#fff 30%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:18px;}
+.subtitle{color:var(--text-dim);font-size:17px;max-width:660px;margin:0 auto;position:relative;line-height:1.75;}
+.header-actions{display:flex;justify-content:center;gap:12px;margin-top:34px;position:relative;flex-wrap:wrap;}
+.primary-btn,.ghost-btn{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1px;text-transform:uppercase;text-decoration:none;border-radius:2px;padding:12px 24px;transition:all .2s;}
+.primary-btn{background:var(--gold);color:#000;border:1px solid var(--gold);font-weight:500;}
+.primary-btn:hover{background:var(--gold-light);border-color:var(--gold-light);}
+.ghost-btn{color:var(--text-dim);border:1px solid var(--border);}
+.ghost-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+/* LAYOUT */
+.container{max-width:960px;margin:0 auto;padding:0 24px;}
+.section{padding:64px 0;border-bottom:1px solid var(--border);}
+.section-num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:3px;margin-bottom:8px;display:block;text-transform:uppercase;}
+.section-title{font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:#fff;margin-bottom:8px;}
+.section-lead{color:var(--text-dim);font-size:15px;max-width:640px;margin-bottom:40px;}
+.prose{color:var(--text-dim);font-size:15px;line-height:1.8;margin-bottom:24px;max-width:720px;}
+.prose strong{color:#fff;}
+.prose em{color:var(--gold);font-style:normal;}
+
+/* MISSION */
+.mission-wrap{background:linear-gradient(135deg,rgba(201,168,76,.07),rgba(45,212,191,.04));border:1px solid rgba(201,168,76,.25);border-radius:4px;padding:36px 40px;margin-bottom:32px;position:relative;overflow:hidden;}
+.mission-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent);}
+.mission-label{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:16px;}
+.mission-statement{font-family:'Playfair Display',serif;font-size:clamp(24px,3vw,36px);font-weight:700;line-height:1.25;color:#fff;margin-bottom:18px;}
+.mission-body{color:var(--text-dim);font-size:15px;line-height:1.8;max-width:720px;}
+.mission-body strong{color:#fff;}
+
+/* PRINCIPLES */
+.principle-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:32px;}
+.principle-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;position:relative;overflow:hidden;transition:border-color .2s,transform .2s;}
+.principle-card:hover{border-color:var(--gold);transform:translateY(-2px);}
+.principle-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent);opacity:0;transition:opacity .2s;}
+.principle-card:hover::before{opacity:1;}
+.principle-label{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:10px;}
+.principle-body{color:var(--text-dim);font-size:13px;line-height:1.65;}
+.principle-body strong{color:#fff;}
+
+/* TRACK MAP */
+.track-list{list-style:none;padding:0;margin:0;}
+.track-item{display:grid;grid-template-columns:92px 1fr auto;gap:22px;align-items:start;padding:22px 0;border-bottom:1px solid var(--border);}
+.track-item:last-child{border-bottom:none;}
+.track-num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;padding-top:4px;}
+.track-title{font-family:'Playfair Display',serif;font-size:23px;line-height:1.25;color:#fff;margin-bottom:8px;}
+.track-desc{color:var(--text-dim);font-size:14px;line-height:1.65;max-width:620px;}
+.track-link{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);text-decoration:none;border:1px solid var(--border);border-radius:2px;padding:8px 12px;transition:all .2s;white-space:nowrap;margin-top:4px;}
+.track-link:hover{color:var(--gold);border-color:var(--gold);}
+.track-item.current .track-num{color:var(--teal);}
+.track-item.current .track-link{color:#000;background:var(--gold);border-color:var(--gold);}
+.track-item.current .track-link:hover{background:var(--gold-light);border-color:var(--gold-light);}
+
+/* CALLOUT */
+.callout{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:4px;padding:16px 20px;margin:28px 0 0;font-size:13px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;line-height:1.6;}
+.callout strong{color:#fff;}
+
+/* REPO */
+.repo-wrap{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:4px;padding:28px 32px;margin-top:16px;}
+.repo-heading{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:14px;}
+.repo-body{color:var(--text-dim);font-size:14px;line-height:1.75;max-width:720px;}
+.repo-body strong{color:#fff;}
+.repo-slot{margin-top:18px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:#fff;background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:12px 14px;display:inline-block;}
+
+/* FINAL CTA */
+.next-card{background:linear-gradient(135deg,rgba(201,168,76,.08),rgba(45,212,191,.05));border:1px solid var(--gold);border-radius:4px;padding:32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;margin-top:8px;}
+.next-label{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;margin-bottom:8px;}
+.next-title{font-family:'Playfair Display',serif;font-size:22px;color:#fff;}
+.next-btn{background:var(--gold);color:#000;border:none;padding:12px 28px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1px;cursor:pointer;border-radius:2px;text-transform:uppercase;font-weight:500;text-decoration:none;transition:background .15s;}
+.next-btn:hover{background:var(--gold-light);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.section{animation:fadeUp .5s ease both;}
+
+@media(max-width:760px){
+  .back-btn{position:relative;top:auto;left:auto;margin:18px 0 0 18px;}
+  header{padding-top:38px;}
+  .mission-wrap{padding:28px 24px;}
+  .track-item{grid-template-columns:1fr;gap:8px;padding:24px 0;}
+  .track-link{width:max-content;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back-btn" href="/learn">Learn</a>
+  <div class="container">
+    <div class="efg-logo">
+      <div class="efg-logo-mark">EFG</div>
+      <div class="efg-logo-text">Hermes · Learn</div>
+    </div>
+    <div class="session-tag">ALGO TRACK · 7 PARTS</div>
+    <h1>Algorithmic Trading,<br>Without the Mystique</h1>
+    <p class="subtitle">A beginner-friendly bridge from stock market basics to rules, backtests, risk controls, and small systems people can actually understand and build.</p>
+    <div class="header-actions">
+      <a class="primary-btn" href="/learn/algo-track/part-1">Start Part 01</a>
+      <a class="ghost-btn" href="#track-map">View Track Map</a>
+    </div>
+  </div>
+</header>
+
+<section class="section">
+  <div class="container">
+    <span class="section-num">01 — MISSION</span>
+    <h2 class="section-title">What This Track Is For</h2>
+    <p class="section-lead">This is not a diploma, and it is not a promise that automation makes trading easy. It is an open-source introduction for people who already understand basic stocks and want to learn how trading ideas become systems.</p>
+
+    <div class="mission-wrap">
+      <div class="mission-label">The Promise</div>
+      <div class="mission-statement">Unlock the stock market as a playground for Egyptian and MENA students, builders, and curious investors.</div>
+      <p class="mission-body">You do not need to be a quant. You do not need AI. You do not need advanced math. You need to understand <strong>rules</strong>, <strong>testing</strong>, <strong>risk</strong>, and <strong>execution</strong> clearly enough to experiment responsibly.</p>
+    </div>
+
+    <p class="prose">The Foundation Track teaches the stock market itself. This Algo Track starts after that: once you know what a stock is, what a price is, and how people trade, the next question is simple — <em>can a trading idea be written as rules?</em></p>
+    <p class="prose">If it can, it can be tested. If it can be tested, it can be improved. If it can be improved, it can become a small system. That is the mental shift this track is built around.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <span class="section-num">02 — PRINCIPLES</span>
+    <h2 class="section-title">The Rules of the Track</h2>
+    <p class="section-lead">The goal is to make algorithmic trading accessible without turning it into hype.</p>
+
+    <div class="principle-grid">
+      <div class="principle-card">
+        <div class="principle-label">No Magic</div>
+        <div class="principle-body">An algo is just a defined set of rules. The computer adds speed, consistency, and coverage — not supernatural prediction.</div>
+      </div>
+      <div class="principle-card">
+        <div class="principle-label">No Hype</div>
+        <div class="principle-body">Automated does not mean profitable. Every part of this track keeps the limits visible.</div>
+      </div>
+      <div class="principle-card">
+        <div class="principle-label">Risk First</div>
+        <div class="principle-body">A strategy is incomplete without position sizing, stop rules, drawdown limits, and a kill switch.</div>
+      </div>
+      <div class="principle-card">
+        <div class="principle-label">Builder Mindset</div>
+        <div class="principle-body">Articles explain the concepts. Repositories will eventually hold the working examples, templates, and experiments.</div>
+      </div>
+    </div>
+
+    <div class="callout">↳ The goal is not to make beginners reckless. The goal is to make experimentation safer, clearer, and more honest.</div>
+  </div>
+</section>
+
+<section class="section" id="track-map">
+  <div class="container">
+    <span class="section-num">03 — TRACK MAP</span>
+    <h2 class="section-title">Seven Parts, One Clear Path</h2>
+    <p class="section-lead">The track moves from simple rules to live-system thinking. Each part should be short, finite, and understandable without needing to code first.</p>
+
+    <ul class="track-list">
+      <li class="track-item current">
+        <div class="track-num">Part 01</div>
+        <div>
+          <div class="track-title">What Is an Algorithm, Really?</div>
+          <div class="track-desc">Strip the mystique. An algo is a defined set of rules applied consistently. If a trading idea can be written clearly, it is already algo-able.</div>
+        </div>
+        <a class="track-link" href="/learn/algo-track/part-1">Open</a>
+      </li>
+      <li class="track-item">
+        <div class="track-num">Part 02</div>
+        <div>
+          <div class="track-title">Why Algos at All?</div>
+          <div class="track-desc">The honest case and the honest limits: emotion, consistency, scale, full-market coverage, overfitting, changing regimes, and why automation is not the same as profit.</div>
+        </div>
+        <a class="track-link" href="/learn/algo-track/part-2">Open</a>
+      </li>
+      <li class="track-item">
+        <div class="track-num">Part 03</div>
+        <div>
+          <div class="track-title">Anatomy of a Trade and a Strategy</div>
+          <div class="track-desc">Every trade needs entry, take-profit, stop-loss, and duration. Every strategy needs signal, entry rule, exit rule, and position sizing.</div>
+        </div>
+        <a class="track-link" href="/learn/algo-track/part-3">Open</a>
+      </li>
+      <li class="track-item">
+        <div class="track-num">Part 04</div>
+        <div>
+          <div class="track-title">Backtesting</div>
+          <div class="track-desc">How to test ideas on the past — and why the past lies. Look-ahead bias, survivorship bias, overfitting, commission, slippage, and untouched recent data.</div>
+        </div>
+        <a class="track-link" href="/learn/algo-track/part-4">Open</a>
+      </li>
+      <li class="track-item">
+        <div class="track-num">Part 05</div>
+        <div>
+          <div class="track-title">From Backtest to Live</div>
+          <div class="track-desc">The gap between paper and real money: order types, broker errors, bad fills, max daily loss, drawdown shutdowns, kill switches, regime changes, and alpha decay.</div>
+        </div>
+        <a class="track-link" href="/learn/algo-track/part-5">Open</a>
+      </li>
+      <li class="track-item">
+        <div class="track-num">Part 06</div>
+        <div>
+          <div class="track-title">Architect Your Algo Like a Mini Company</div>
+          <div class="track-desc">A serious system is not one giant script. It has roles: data, research, execution, portfolio management, and a risk officer that can shut everything down.</div>
+        </div>
+        <a class="track-link" href="/learn/algo-track/part-6">Open</a>
+      </li>
+      <li class="track-item">
+        <div class="track-num">Part 07</div>
+        <div>
+          <div class="track-title">What AI Brings to Algo Trading</div>
+          <div class="track-desc">AI as an extension, not a replacement: sentiment, unstructured data, adaptive strategies, retraining, and the danger of overfitting systems that keep changing.</div>
+        </div>
+        <a class="track-link" href="/learn/algo-track/part-7">Open</a>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <span class="section-num">04 — REPOS</span>
+    <h2 class="section-title">Articles Explain. Repos Demonstrate.</h2>
+    <p class="section-lead">Working code should stay outside the article so it can evolve, improve, and be debugged over time.</p>
+
+    <div class="repo-wrap">
+      <div class="repo-heading">Repository Slots</div>
+      <p class="repo-body">Each part will eventually end with a clean working-example callout. The article stays conceptual; the repo becomes the living example. Until the EFG API and examples are ready, every part can hold a placeholder.</p>
+      <div class="repo-slot">&lt;RepoLink&gt; Working code for this part: path TBD once EFG API is live.</div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="border-bottom:none;">
+  <div class="container">
+    <span class="section-num">05 — START</span>
+    <h2 class="section-title">Start With the Simplest Idea</h2>
+    <p class="section-lead">Before backtests, APIs, AI, or architecture, start with one question: can the idea be written as a rule?</p>
+
+    <div class="next-card">
+      <div>
+        <div class="next-label">START — PART 01 / 07</div>
+        <div class="next-title">What Is an Algorithm, Really?<br><span style="font-size:16px;color:var(--text-dim);font-family:'IBM Plex Sans',sans-serif;font-weight:400;">The definition, the simplest possible algo, and what changes when a computer runs it.</span></div>
+      </div>
+      <a class="next-btn" href="/learn/algo-track/part-1">Part 01 →</a>
+    </div>
+  </div>
+</section>
+
+<script src="/review-overlay.js"></script>
+</body>
+</html>

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part 04 — Backtesting | EFG Hermes Algo Track</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0e14;--bg2:#0f1620;--bg3:#141d2b;--card:#111827;--border:#1e2d42;
+  --gold:#c9a84c;--gold-light:#e8c96a;--teal:#2dd4bf;--teal-dim:#0d9488;
+  --red:#f87171;--green:#4ade80;--text:#e2e8f0;--text-dim:#94a3b8;--text-muted:#4a5568;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:15px;line-height:1.7;overflow-x:hidden;}
+
+/* BACK BUTTON */
+.back-btn{position:absolute;top:24px;left:24px;display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--text-muted);text-decoration:none;text-transform:uppercase;border:1px solid var(--border);padding:6px 14px;border-radius:2px;transition:all .2s;z-index:10;}
+.back-btn:hover{border-color:var(--gold);color:var(--gold);}
+.back-btn::before{content:'←';margin-right:2px;}
+
+/* HEADER */
+header{position:relative;padding:60px 0 80px;text-align:center;overflow:hidden;border-bottom:1px solid var(--border);}
+header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(201,168,76,.12) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 80% 50%,rgba(45,212,191,.06) 0%,transparent 60%);}
+.efg-logo{display:inline-flex;align-items:center;gap:10px;margin-bottom:32px;position:relative;}
+.efg-logo-mark{width:36px;height:36px;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:700;color:var(--gold);font-size:14px;letter-spacing:1px;}
+.efg-logo-text{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase;}
+.session-tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--teal);border:1px solid var(--teal-dim);padding:4px 14px;border-radius:2px;margin-bottom:20px;position:relative;}
+h1{font-family:'Playfair Display',serif;font-size:clamp(36px,5vw,64px);font-weight:900;line-height:1.1;position:relative;background:linear-gradient(135deg,#fff 30%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px;}
+.subtitle{color:var(--text-dim);font-size:16px;max-width:540px;margin:0 auto;position:relative;}
+.progress-bar-wrap{display:flex;justify-content:center;gap:6px;margin-top:40px;position:relative;}
+.prog-dot{width:32px;height:4px;border-radius:2px;background:var(--border);}
+.prog-dot.active{background:var(--gold);}
+.prog-dot.current{background:var(--teal);}
+
+/* LAYOUT */
+.container{max-width:960px;margin:0 auto;padding:0 24px;}
+.section{padding:64px 0;border-bottom:1px solid var(--border);}
+.section-num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:3px;margin-bottom:8px;display:block;}
+.section-title{font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:#fff;margin-bottom:8px;}
+.section-lead{color:var(--text-dim);font-size:15px;max-width:580px;margin-bottom:40px;}
+
+/* PROSE */
+.prose{color:var(--text-dim);font-size:15px;line-height:1.8;margin-bottom:28px;max-width:720px;}
+.prose strong{color:#fff;}
+.prose em{color:var(--gold);font-style:normal;}
+.prose + .prose{margin-top:-8px;}
+
+/* RULE / QUOTE BLOCK */
+.rule-block{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:4px;padding:28px 32px;margin-bottom:24px;}
+.rule-block blockquote{font-family:'IBM Plex Mono',monospace;font-size:14px;color:#fff;line-height:1.8;font-style:normal;}
+.rule-block blockquote strong{color:var(--gold);}
+
+/* CALLOUT */
+.callout{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:4px;padding:14px 20px;margin-bottom:24px;font-size:13px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;line-height:1.6;}
+.callout strong{color:#fff;}
+
+/* FLOW */
+.flow-row{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin-bottom:32px;}
+.flow-item{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:18px 20px;flex:1;min-width:130px;text-align:center;position:relative;}
+.flow-item-label{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.flow-item-val{font-size:14px;color:#fff;font-weight:500;line-height:1.45;}
+.flow-arrow{color:var(--gold);font-size:20px;padding:18px 8px;flex-shrink:0;display:flex;align-items:center;}
+
+/* CARDS */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-bottom:32px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;position:relative;overflow:hidden;transition:border-color .2s,transform .2s;}
+.card:hover{border-color:var(--gold);transform:translateY(-2px);}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent);opacity:0;transition:opacity .2s;}
+.card:hover::before{opacity:1;}
+.card-label{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:10px;}
+.card-title{font-weight:600;color:#fff;margin-bottom:8px;font-size:15px;}
+.card-body{color:var(--text-dim);font-size:13px;line-height:1.6;}
+.card-body strong{color:#fff;}
+
+/* SPLIT / COMPARE */
+.compare-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px;}
+.compare-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px 28px;}
+.compare-label{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;margin-bottom:12px;text-transform:uppercase;}
+.compare-label.known{color:var(--teal);}
+.compare-label.unknown{color:var(--gold);}
+.compare-label.bad{color:var(--red);}
+.compare-body{font-size:13px;color:var(--text-dim);line-height:1.65;}
+.compare-body strong{color:#fff;}
+
+/* DATA SPLIT */
+.split-wrap{background:var(--card);border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-bottom:32px;}
+.split-header{padding:16px 24px;border-bottom:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;}
+.split-bar{display:grid;grid-template-columns:3fr 1fr 1fr;min-height:88px;}
+.split-cell{padding:24px;border-right:1px solid var(--border);position:relative;overflow:hidden;}
+.split-cell:last-child{border-right:none;}
+.split-cell.train::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 120% 120% at 50% 110%,rgba(45,212,191,.06) 0%,transparent 70%);pointer-events:none;}
+.split-cell.optimize::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 120% 120% at 50% 110%,rgba(201,168,76,.06) 0%,transparent 70%);pointer-events:none;}
+.split-cell.holdout::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 120% 120% at 50% 110%,rgba(248,113,113,.06) 0%,transparent 70%);pointer-events:none;}
+.split-kicker{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;position:relative;}
+.split-title{font-family:'Playfair Display',serif;font-size:24px;color:#fff;line-height:1.1;margin-bottom:8px;position:relative;}
+.split-desc{font-size:13px;color:var(--text-dim);line-height:1.55;position:relative;}
+
+/* ITEM LIST */
+.item-list{display:flex;flex-direction:column;gap:0;margin-bottom:32px;}
+.item-entry{padding:28px 0;border-bottom:1px solid var(--border);}
+.item-entry:last-child{border-bottom:none;}
+.item-head{display:flex;align-items:baseline;gap:16px;margin-bottom:12px;}
+.item-num{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;flex-shrink:0;min-width:44px;color:var(--red);}
+.item-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:#fff;}
+.item-body{color:var(--text-dim);font-size:15px;line-height:1.8;max-width:720px;padding-left:60px;}
+.item-body strong{color:#fff;}
+.item-body em{color:var(--gold);font-style:normal;}
+
+/* TAKEAWAYS */
+.takeaway-wrap{background:linear-gradient(135deg,rgba(201,168,76,.06),rgba(45,212,191,.04));border:1px solid rgba(201,168,76,.25);border-radius:4px;padding:36px 40px;margin-top:16px;}
+.takeaway-heading{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:20px;}
+.takeaway-list{list-style:none;padding:0;}
+.takeaway-list li{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);font-size:14px;color:var(--text-dim);line-height:1.6;}
+.takeaway-list li:last-child{border-bottom:none;}
+.takeaway-list li::before{content:'✓';color:var(--teal);font-family:'IBM Plex Mono',monospace;font-size:12px;flex-shrink:0;margin-top:2px;}
+.takeaway-list li strong{color:#fff;}
+
+/* NEXT CARD */
+.next-card{background:linear-gradient(135deg,rgba(201,168,76,.08),rgba(45,212,191,.05));border:1px solid var(--gold);border-radius:4px;padding:32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;margin-top:40px;}
+.next-label{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;margin-bottom:8px;}
+.next-title{font-family:'Playfair Display',serif;font-size:22px;color:#fff;}
+.next-btn{background:var(--gold);color:#000;border:none;padding:12px 28px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1px;cursor:pointer;border-radius:2px;text-transform:uppercase;font-weight:500;transition:background .15s;}
+.next-btn:hover{background:var(--gold-light);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.section{animation:fadeUp .5s ease both;}
+
+@media(max-width:700px){
+  .compare-row{grid-template-columns:1fr;}
+  .split-bar{grid-template-columns:1fr;}
+  .split-cell{border-right:none;border-bottom:1px solid var(--border);}
+  .split-cell:last-child{border-bottom:none;}
+  .item-body{padding-left:0;}
+  .flow-arrow{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <a class="back-btn" href="/learn/algo-track">Algo Track</a>
+  <div class="container">
+    <div class="efg-logo">
+      <div class="efg-logo-mark">EFG</div>
+      <div class="efg-logo-text">Hermes · Algo Track</div>
+    </div>
+    <div class="session-tag">PART 04 / 07</div>
+    <h1>Backtesting:<br>Testing Ideas on the Past</h1>
+    <p class="subtitle">How to use history as a simulator — and how to read the results without fooling yourself.</p>
+    <div class="progress-bar-wrap">
+      <div class="prog-dot active"></div>
+      <div class="prog-dot active"></div>
+      <div class="prog-dot active"></div>
+      <div class="prog-dot current"></div>
+      <div class="prog-dot"></div>
+      <div class="prog-dot"></div>
+      <div class="prog-dot"></div>
+    </div>
+  </div>
+</header>
+
+<!-- INTRO -->
+<div class="section">
+  <div class="container">
+    <span class="section-num">01 — WHY THIS MATTERS</span>
+    <h2 class="section-title">From Defined Strategy to Testable Idea</h2>
+    <p class="section-lead">Part 3 showed how to define a trade and a strategy. Now comes the next question: would this idea have worked before?</p>
+
+    <p class="prose">That question is the reason backtesting exists. Instead of risking real money on a strategy because it sounds smart, you run the rules through historical market data and watch what would have happened. Every entry, every exit, every stop-loss, every cost — simulated before a single live order is placed.</p>
+
+    <div class="rule-block">
+      <blockquote>A backtest is not a promise that a strategy will make money. It is a way to ask a better question: <strong>is this idea coherent enough to test more seriously?</strong></blockquote>
+    </div>
+
+    <p class="prose">Think of it like a flight simulator. It does not prove you can fly through every storm. But it lets you practice the controls, stress the system, and discover obvious mistakes before the real aircraft leaves the ground.</p>
+  </div>
+</div>
+
+<!-- WHAT IT DOES -->
+<div class="section">
+  <div class="container">
+    <span class="section-num">02 — THE SIMULATOR</span>
+    <h2 class="section-title">What a Backtest Actually Does</h2>
+    <p class="section-lead">A backtest plays market history forward, one step at a time, while your strategy reacts according to its rules.</p>
+
+    <div class="flow-row">
+      <div class="flow-item">
+        <div class="flow-item-label">01</div>
+        <div class="flow-item-val">Idea</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-item">
+        <div class="flow-item-label">02</div>
+        <div class="flow-item-val">Rules</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-item">
+        <div class="flow-item-label">03</div>
+        <div class="flow-item-val">Historical Data</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-item">
+        <div class="flow-item-label">04</div>
+        <div class="flow-item-val">Simulated Trades</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-item">
+        <div class="flow-item-label">05</div>
+        <div class="flow-item-val">Results</div>
+      </div>
+    </div>
+
+    <p class="prose">A simple backtest might ask: whenever the 20-day moving average crosses above the 50-day moving average, buy the stock. Then sell when the reverse crossover happens, or when the stop-loss is hit, or when the maximum duration expires.</p>
+
+    <p class="prose">The backtester walks through the historical candles and records what the strategy would have done at each point in time. The output is not just one final profit number. It is the full behavior of the strategy: when it entered, when it exited, how long trades lasted, how deep losses got, how often it traded, and whether the idea survived realistic costs.</p>
+  </div>
+</div>
+
+<!-- WHAT YOU MEASURE -->
+<div class="section">
+  <div class="container">
+    <span class="section-num">03 — MEASUREMENT</span>
+    <h2 class="section-title">What You Measure</h2>
+    <p class="section-lead">A beginner looks only at return. A builder looks at the shape of the return.</p>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-label">Return</div>
+        <div class="card-title">Did the strategy make money?</div>
+        <div class="card-body">Useful, but not enough by itself. A high return with terrifying losses may not be tradable.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Win Rate</div>
+        <div class="card-title">How often did it win?</div>
+        <div class="card-body">A low win rate can still work if winners are much larger than losers. A high win rate can still fail if losses are huge.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Payoff</div>
+        <div class="card-title">Average win vs average loss</div>
+        <div class="card-body">This tells you whether the strategy makes small frequent gains, rare large gains, or something in between.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Max Drawdown</div>
+        <div class="card-title">How bad did it get?</div>
+        <div class="card-body">The deepest peak-to-trough loss. This is often the number that decides whether a human can actually stick with the strategy.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Trade Count</div>
+        <div class="card-title">How many trades happened?</div>
+        <div class="card-body">A strategy tested on 12 trades tells you much less than a strategy tested on hundreds of trades.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Exposure</div>
+        <div class="card-title">How often was capital at work?</div>
+        <div class="card-body">Two strategies with the same return can have very different risk if one is invested constantly and the other is rarely exposed.</div>
+      </div>
+    </div>
+
+    <div class="callout">
+      ↳ Backtesting is not about finding the biggest number. It is about understanding the behavior of the strategy.
+    </div>
+  </div>
+</div>
+
+<!-- ML MENTALITY -->
+<div class="section">
+  <div class="container">
+    <span class="section-num">04 — DATA DISCIPLINE</span>
+    <h2 class="section-title">Treat Historical Data Like ML Data</h2>
+    <p class="section-lead">Do not judge a strategy only on the same data you used to invent or tune it.</p>
+
+    <p class="prose">This is the easiest place to fool yourself. You test an idea, tweak it, test again, tweak again, and eventually the strategy looks great on the exact historical period you kept staring at. But that does not mean you found a real edge. It may only mean you memorized the past.</p>
+
+    <div class="split-wrap">
+      <div class="split-header">Example Data Split · 8 Years of History</div>
+      <div class="split-bar">
+        <div class="split-cell train">
+          <div class="split-kicker">Training</div>
+          <div class="split-title">6 Years</div>
+          <div class="split-desc">Use this to develop the idea and understand how the rules behave.</div>
+        </div>
+        <div class="split-cell optimize">
+          <div class="split-kicker">Optimize / Test</div>
+          <div class="split-title">1 Year</div>
+          <div class="split-desc">Use this to compare versions without touching the final reality check.</div>
+        </div>
+        <div class="split-cell holdout">
+          <div class="split-kicker">Untouched Holdout</div>
+          <div class="split-title">1 Year</div>
+          <div class="split-desc">Keep this completely unseen until the end. This is where excuses go to die.</div>
+        </div>
+      </div>
+    </div>
+
+    <p class="prose">Some practitioners use a simple two-way split: train on six years, test on two. Others use three sets: train, optimize, final validation. The exact split can vary. The principle does not: <strong>keep a portion of the data untouched until the end.</strong></p>
+
+    <p class="prose">For trading, the untouched portion should usually be recent. Markets evolve. A strategy that only works in old conditions may look beautiful in the past and irrelevant today. Recent data is closer to the market you are actually about to trade.</p>
+  </div>
+</div>
+
+<!-- COSTS -->
+<div class="section">
+  <div class="container">
+    <span class="section-num">05 — COSTS</span>
+    <h2 class="section-title">Costs: Known and Unknown</h2>
+    <p class="section-lead">A backtest that ignores trading costs is not optimistic. It is incomplete.</p>
+
+    <div class="compare-row">
+      <div class="compare-card">
+        <div class="compare-label known">Commission Is Known</div>
+        <div class="compare-body">
+          <p><strong>Build it in exactly.</strong> If a trade has a broker commission, exchange fee, tax, or any other known cost, the backtest should subtract it every time the simulated trade happens.</p>
+          <br>
+          <p>There is no need to guess here. Commission is part of the trade. Ignoring it makes the result wrong by design.</p>
+        </div>
+      </div>
+      <div class="compare-card">
+        <div class="compare-label unknown">Slippage Is Uncertain</div>
+        <div class="compare-body">
+          <p><strong>Model it conservatively.</strong> Slippage is the gap between the price your backtest assumes and the price you actually get in the market.</p>
+          <br>
+          <p>Your backtest may assume you bought at EGP 10.00. Live, you might fill at EGP 10.03, EGP 10.05, or not fill at all. The exact number is unknowable ahead of time, so you use a realistic buffer.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="rule-block">
+      <blockquote>A serious backtest does not ask, <strong>“What if every order fills perfectly?”</strong><br><br>It asks, <strong>“Does this idea still work after realistic costs and imperfect execution?”</strong></blockquote>
+    </div>
+
+    <p class="prose">This matters especially in markets where liquidity differs sharply from one stock to another. A liquid name and a thinly traded name can have completely different execution realities. Same strategy. Same chart. Very different fills.</p>
+  </div>
+</div>
+
+<!-- DISTORTIONS -->
+<div class="section">
+  <div class="container">
+    <span class="section-num">06 — DISTORTIONS</span>
+    <h2 class="section-title">Where Backtests Get Distorted</h2>
+    <p class="section-lead">The point is not to fear backtests. The point is to know where the mirror bends.</p>
+
+    <div class="item-list">
+      <div class="item-entry">
+        <div class="item-head">
+          <span class="item-num">D1</span>
+          <h3 class="item-title">Look-Ahead Bias</h3>
+        </div>
+        <div class="item-body">
+          <p>Using information in the backtest that you would not have had at the time of the trade. Example: entering a trade at 10:00am using a closing price that only became known at the end of the day.</p>
+        </div>
+      </div>
+
+      <div class="item-entry">
+        <div class="item-head">
+          <span class="item-num">D2</span>
+          <h3 class="item-title">Survivorship Bias</h3>
+        </div>
+        <div class="item-body">
+          <p>Testing only on stocks that still exist today. That quietly removes companies that were delisted, suspended, or failed — which makes the historical market look cleaner than it really was.</p>
+        </div>
+      </div>
+
+      <div class="item-entry">
+        <div class="item-head">
+          <span class="item-num">D3</span>
+          <h3 class="item-title">Overfitting</h3>
+        </div>
+        <div class="item-body">
+          <p>Tuning a strategy until it fits one specific historical period beautifully. The backtest improves, but the idea becomes less real. You are no longer discovering a market behavior. You are sculpting the strategy around noise.</p>
+        </div>
+      </div>
+
+      <div class="item-entry">
+        <div class="item-head">
+          <span class="item-num">D4</span>
+          <h3 class="item-title">Ignoring Costs and Slippage</h3>
+        </div>
+        <div class="item-body">
+          <p>A strategy that makes money only before commission, fees, spreads, and imperfect fills is not a strategy yet. It is a clean chart with messy reality removed.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LIMIT ORDERS -->
+<div class="section">
+  <div class="container">
+    <span class="section-num">07 — EXECUTION ASSUMPTIONS</span>
+    <h2 class="section-title">Limit Orders and Missed Fills</h2>
+    <p class="section-lead">A backtest should match the way you expect to execute live.</p>
+
+    <p class="prose">In live algo trading, limit orders are often preferred because they give price certainty. You decide the maximum price you are willing to pay, or the minimum price you are willing to sell at. That makes live execution closer to the assumptions in your backtest.</p>
+
+    <div class="compare-row">
+      <div class="compare-card">
+        <div class="compare-label known">The Benefit</div>
+        <div class="compare-body">
+          <p><strong>Price control.</strong> A limit order protects you from getting filled far away from the price your strategy expected.</p>
+        </div>
+      </div>
+      <div class="compare-card">
+        <div class="compare-label bad">The Tradeoff</div>
+        <div class="compare-body">
+          <p><strong>Missed fills.</strong> If the market never reaches your limit price, the trade does not happen. A backtest that assumes every limit order fills is pretending away the main tradeoff.</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="prose">The practical solution is not to pretend fills are perfect. It is to widen your slippage assumptions, model missed trades where appropriate, and keep the backtest conservative enough that live execution has room to be imperfect.</p>
+
+    <div class="callout">
+      ↳ The cleaner the execution assumption, the more suspicious you should be. Real markets are never that polite.
+    </div>
+  </div>
+</div>
+
+<!-- CONCLUSION -->
+<div class="section">
+  <div class="container">
+    <span class="section-num">08 — THE RIGHT CONCLUSION</span>
+    <h2 class="section-title">A Backtest Is a Hypothesis, Not a Promise</h2>
+    <p class="section-lead">The goal is not certainty. The goal is a better filter.</p>
+
+    <p class="prose">A bad backtest says, “This made money in the past, so it will make money live.” That is the wrong conclusion.</p>
+
+    <p class="prose">A good backtest says, “This idea behaved coherently in historical conditions, survived realistic costs, avoided obvious distortions, and is worth testing more seriously.” That is a much stronger way to think.</p>
+
+    <div class="rule-block">
+      <blockquote>Backtesting is how builders turn trading ideas into testable prototypes. It does not remove uncertainty. It makes the uncertainty visible.</blockquote>
+    </div>
+  </div>
+</div>
+
+<!-- SUMMARY / NEXT -->
+<div class="section" style="border-bottom:none;">
+  <div class="container">
+    <span class="section-num">09 — SUMMARY</span>
+    <h2 class="section-title">What You Should Now Understand</h2>
+    <p class="section-lead">Six things to carry into live execution.</p>
+
+    <div class="takeaway-wrap">
+      <div class="takeaway-heading">Key Takeaways — Part 04</div>
+      <ul class="takeaway-list">
+        <li>A backtest runs a defined strategy through historical data to simulate how it would have behaved.</li>
+        <li>The result is not just return. You should read the full behavior: drawdown, win rate, payoff, trade count, exposure, and costs.</li>
+        <li>Treat historical data like ML data: train on one portion, test on another, and keep recent data untouched as a reality check.</li>
+        <li>Commission is known and should be built in exactly. Slippage is uncertain and should be modeled conservatively.</li>
+        <li>Backtests get distorted by look-ahead bias, survivorship bias, overfitting, and unrealistic execution assumptions.</li>
+        <li>A backtest is a hypothesis, not a promise. It tells you whether an idea is worth testing more seriously.</li>
+      </ul>
+    </div>
+
+    <div class="next-card">
+      <div>
+        <div class="next-label">NEXT — PART 05 / 07</div>
+        <div class="next-title">From Backtest to Live<br><span style="font-size:16px;color:var(--text-dim);font-family:'IBM Plex Sans',sans-serif;font-weight:400;">Execution, monitoring, and the risk controls that keep an algo from becoming dangerous.</span></div>
+      </div>
+      <button class="next-btn" onclick="window.location='/learn/algo-track/part-5'">Part 05 →</button>
+    </div>
+  </div>
+</div>
+
+<script src="/review-overlay.js"></script>
+</body>
+</html>

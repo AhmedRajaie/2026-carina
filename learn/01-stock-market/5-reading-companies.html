@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 5 — Reading Companies | EFG Hermes</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#0a0e14; --bg2:#0f1620; --bg3:#141d2b; --card:#111827;
+  --border:#1e2d42; --gold:#c9a84c; --gold-light:#e8c96a;
+  --teal:#2dd4bf; --teal-dim:#0d9488; --red:#f87171; --green:#4ade80;
+  --indigo:#818cf8; --orange:#fb923c; --blue:#60a5fa;
+  --text:#e2e8f0; --text-dim:#94a3b8; --text-muted:#4a5568;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:15px;line-height:1.7;overflow-x:hidden;}
+
+/* HEADER */
+header{position:relative;padding:60px 0 80px;text-align:center;overflow:hidden;border-bottom:1px solid var(--border);}
+header::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 70% 60% at 50% -10%,rgba(129,140,248,.1) 0%,transparent 65%),
+             radial-gradient(ellipse 40% 40% at 85% 60%,rgba(45,212,191,.07) 0%,transparent 55%);}
+.efg-logo{display:inline-flex;align-items:center;gap:10px;margin-bottom:28px;position:relative;}
+.efg-logo-mark{width:36px;height:36px;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:700;color:var(--gold);font-size:14px;}
+.efg-logo-text{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase;}
+.session-tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--indigo);border:1px solid rgba(129,140,248,.4);padding:4px 14px;border-radius:2px;margin-bottom:20px;}
+h1{font-family:'Playfair Display',serif;font-size:clamp(36px,5vw,60px);font-weight:900;line-height:1.1;background:linear-gradient(135deg,#fff 20%,var(--indigo) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px;}
+.subtitle{color:var(--text-dim);font-size:16px;max-width:520px;margin:0 auto;}
+.progress-wrap{display:flex;justify-content:center;gap:6px;margin-top:36px;}
+.prog-dot{width:28px;height:3px;border-radius:2px;background:var(--border);}
+.prog-dot.done{background:var(--gold);}
+.prog-dot.current{background:var(--indigo);}
+
+/* STICKY NAV */
+.sticky-nav{position:sticky;top:0;z-index:100;background:rgba(10,14,20,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);}
+.nav-inner{max-width:960px;margin:0 auto;padding:0 24px;display:flex;overflow-x:auto;}
+.nav-item{padding:14px 18px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;color:var(--text-muted);white-space:nowrap;border-bottom:2px solid transparent;transition:all .2s;text-transform:uppercase;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none;}
+.nav-item:hover{color:var(--text);}
+.nav-item.active{color:var(--indigo);border-bottom-color:var(--indigo);}
+
+/* LAYOUT */
+.container{max-width:960px;margin:0 auto;padding:0 24px;}
+.section{padding:72px 0;border-bottom:1px solid var(--border);}
+.section-num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--indigo);letter-spacing:3px;margin-bottom:8px;display:block;}
+.section-title{font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:#fff;margin-bottom:8px;}
+.section-lead{color:var(--text-dim);font-size:15px;max-width:600px;margin-bottom:40px;line-height:1.75;}
+
+/* ASSET CARDS */
+.asset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:32px;}
+.asset-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;position:relative;overflow:hidden;transition:border-color .2s,transform .2s;}
+.asset-card:hover{transform:translateY(-2px);}
+.asset-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;opacity:0;transition:opacity .2s;}
+.asset-card:hover::after{opacity:1;}
+.ac-stocks:hover{border-color:rgba(74,222,128,.5);} .ac-stocks::after{background:var(--green);}
+.ac-bonds:hover{border-color:rgba(201,168,76,.5);} .ac-bonds::after{background:var(--gold);}
+.ac-forex:hover{border-color:rgba(45,212,191,.5);} .ac-forex::after{background:var(--teal);}
+.ac-futures:hover{border-color:rgba(251,146,60,.5);} .ac-futures::after{background:var(--orange);}
+.ac-options:hover{border-color:rgba(129,140,248,.5);} .ac-options::after{background:var(--indigo);}
+.ac-crypto:hover{border-color:rgba(248,113,113,.5);} .ac-crypto::after{background:var(--red);}
+.ac-tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;padding:3px 8px;border-radius:2px;margin-bottom:14px;text-transform:uppercase;}
+.ac-icon{font-size:24px;margin-bottom:12px;display:block;}
+.ac-title{font-weight:600;color:#fff;margin-bottom:8px;font-size:15px;}
+.ac-body{color:var(--text-dim);font-size:13px;line-height:1.65;margin-bottom:14px;}
+.ac-pills{display:flex;gap:8px;flex-wrap:wrap;}
+.ac-pill{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 8px;border-radius:2px;border:1px solid var(--border);color:var(--text-muted);}
+.sum-tag{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 8px;border-radius:2px;}
+.sum-pos{background:rgba(74,222,128,.08);color:var(--green);border:1px solid rgba(74,222,128,.2);}
+.sum-zero{background:rgba(251,146,60,.08);color:var(--orange);border:1px solid rgba(251,146,60,.2);}
+.sum-neg{background:rgba(248,113,113,.08);color:var(--red);border:1px solid rgba(248,113,113,.2);}
+.sum-deb{background:rgba(201,168,76,.08);color:var(--gold);border:1px solid rgba(201,168,76,.2);}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;margin-bottom:24px;}
+table{width:100%;border-collapse:collapse;font-size:14px;}
+th{text-align:left;padding:10px 16px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;color:var(--text-muted);border-bottom:1px solid var(--border);text-transform:uppercase;}
+td{padding:12px 16px;border-bottom:1px solid var(--border);color:var(--text-dim);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,.02);}
+td:first-child{color:#fff;font-weight:500;}
+
+/* CHART WRAP */
+.chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:28px;margin-bottom:24px;}
+.chart-title{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1px;color:var(--text-dim);margin-bottom:4px;text-transform:uppercase;}
+.chart-sub{color:var(--text-muted);font-size:12px;margin-bottom:20px;}
+
+/* INDEX */
+.index-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;}
+.index-box{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;}
+.index-label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:4px;}
+.index-name{font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin-bottom:8px;}
+.index-desc{font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:16px;}
+.index-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.index-chip{font-family:'IBM Plex Mono',monospace;font-size:10px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:2px;padding:3px 8px;color:var(--text-muted);}
+
+/* ETF FLOW */
+.etf-box{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:28px;margin-bottom:24px;}
+.etf-flow{display:flex;align-items:center;flex-wrap:wrap;gap:0;margin-top:20px;}
+.etf-node{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:14px 18px;flex:1;min-width:120px;text-align:center;}
+.etf-node-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+.etf-node-val{font-size:13px;color:#fff;font-weight:500;}
+.etf-arrow{color:var(--indigo);font-size:18px;padding:0 8px;flex-shrink:0;}
+
+/* HOURS */
+.hours-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:12px;}
+.hours-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:18px;}
+.hours-flag{font-size:20px;margin-bottom:8px;}
+.hours-market{font-weight:600;color:#fff;font-size:14px;margin-bottom:3px;}
+.hours-time{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-dim);margin-bottom:4px;}
+.hours-days{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:8px;}
+.htag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 7px;border-radius:2px;}
+.ht-primary{background:rgba(74,222,128,.1);color:var(--green);border:1px solid rgba(74,222,128,.2);}
+.ht-overlap{background:rgba(201,168,76,.1);color:var(--gold);border:1px solid rgba(201,168,76,.2);}
+.ht-after{background:rgba(100,116,139,.1);color:#64748b;border:1px solid rgba(100,116,139,.2);}
+.ht-always{background:rgba(129,140,248,.1);color:var(--indigo);border:1px solid rgba(129,140,248,.2);}
+
+/* INFO DECAY */
+.info-timeline{position:relative;padding:20px 0;}
+.info-type{display:flex;align-items:flex-start;gap:20px;margin-bottom:24px;position:relative;}
+.info-type::before{content:'';position:absolute;left:19px;top:40px;bottom:-24px;width:1px;background:var(--border);}
+.info-type:last-child::before{display:none;}
+.info-dot{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;border:2px solid;}
+.info-body{flex:1;}
+.info-label{font-weight:600;color:#fff;font-size:14px;margin-bottom:4px;}
+.info-speed{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.info-desc{font-size:13px;color:var(--text-dim);line-height:1.65;}
+.info-bar-wrap{margin-top:8px;}
+.info-bar-bg{height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.info-bar-fill{height:100%;border-radius:3px;transition:width .5s;}
+.info-bar-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-muted);margin-top:4px;}
+
+/* RESOURCES */
+.resource-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;}
+.rc{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;text-decoration:none;display:block;transition:border-color .2s,transform .2s;position:relative;overflow:hidden;}
+.rc:hover{transform:translateY(-2px);}
+.rc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:0;transition:opacity .2s;}
+.rc:hover::before{opacity:1;}
+.rc-inv::before,.rc-inv:hover{border-color:rgba(74,222,128,.4);} .rc-inv::before{background:var(--green);}
+.rc-tv::before,.rc-tv:hover{border-color:rgba(45,212,191,.4);} .rc-tv::before{background:var(--teal);}
+.rc-yf::before,.rc-yf:hover{border-color:rgba(201,168,76,.4);} .rc-yf::before{background:var(--gold);}
+.rc-dam::before,.rc-dam:hover{border-color:rgba(251,146,60,.4);} .rc-dam::before{background:var(--orange);}
+.rc-icon{font-size:26px;margin-bottom:12px;display:block;}
+.rc-name{font-weight:600;color:#fff;margin-bottom:3px;font-size:15px;}
+.rc-type{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;}
+.rc-body{font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:12px;}
+.rc-url{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);}
+.rc-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;}
+.rc-tag{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 7px;border-radius:2px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text-muted);}
+
+/* NEXT */
+.next-card{background:linear-gradient(135deg,rgba(129,140,248,.08),rgba(45,212,191,.05));border:1px solid var(--indigo);border-radius:4px;padding:32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;margin-top:40px;}
+.next-label{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--indigo);letter-spacing:2px;margin-bottom:8px;}
+.next-title{font-family:'Playfair Display',serif;font-size:22px;color:#fff;}
+.next-btn{background:var(--indigo);color:#fff;border:none;padding:12px 28px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1px;cursor:pointer;border-radius:2px;text-transform:uppercase;transition:background .15s;}
+.next-btn:hover{background:#a5b4fc;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.section{animation:fadeUp .5s ease both;}
+@media(max-width:680px){.index-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="container">
+    <div class="efg-logo">
+      <div class="efg-logo-mark">EFG</div>
+      <div class="efg-logo-text">Hermes · Stock Market Series</div>
+    </div>
+    <div class="session-tag">SESSION 05 / 05</div>
+    <h1>Reading<br>Companies</h1>
+    <p class="subtitle">The fundamental-analysis lens — what a company is actually worth, how to read its financial statements, and how to tell a good business from a cheap stock.</p>
+    <div class="progress-wrap">
+      <div class="prog-dot done"></div>
+      <div class="prog-dot done"></div>
+      <div class="prog-dot done"></div>
+      <div class="prog-dot done"></div>
+      <div class="prog-dot current"></div>
+    </div>
+  </div>
+</header>
+
+<!-- STICKY NAV -->
+<nav class="sticky-nav">
+  <div class="nav-inner">
+    <button class="nav-item" onclick="goTo('s1')">01 What Fundamentals Mean</button>
+    <button class="nav-item" onclick="goTo('s2')">02 Financial Statements</button>
+    <button class="nav-item" onclick="goTo('s3')">03 Valuation Ratios</button>
+    <button class="nav-item" onclick="goTo('s4')">04 Sector Lenses</button>
+    <button class="nav-item" onclick="goTo('s5')">05 The Checklist</button>
+  </div>
+</nav>
+
+<!-- ══ 01 WHAT FUNDAMENTALS MEAN ══ -->
+<div class="section" id="s1">
+  <div class="container">
+    <span class="section-num">01 — WHAT FUNDAMENTALS MEAN</span>
+    <h2 class="section-title">The Lens Most Professionals Actually Use</h2>
+    <p class="section-lead">We covered charts before companies because charts are flashier — but for long-term wealth, this is the lens that matters more. Fundamental analysis asks one core question: <strong style="color:#fff;">is the price you're paying less than what you're getting?</strong> Everything else in this session is just tools to answer that question.</p>
+
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:28px;margin-bottom:24px;">
+      <div style="font-family:'Playfair Display',serif;font-size:24px;color:#fff;line-height:1.4;font-style:italic;margin-bottom:14px;">"Price is what you pay. Value is what you get."</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;">— WARREN BUFFETT</div>
+      <div style="font-size:14px;color:var(--text-dim);line-height:1.75;margin-top:16px;">Fundamentals are everything that determines what a business is actually <em>worth</em> — its earnings, assets, debt, growth, management quality, competitive position. The stock price is what people are willing to pay <em>right now</em>. The two are related, but they're not the same — and the gap between them is where investing returns come from.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px;">
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:22px;border-left:3px solid var(--gold);">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">The Company</div>
+        <div style="color:#fff;font-weight:500;font-size:15px;margin-bottom:10px;">A real business doing real things</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.65;">Has employees, factories, customers, contracts, debts, profits. Generates cash. Has competitors. Faces regulation. Pays taxes. The company exists whether or not you trade its stock today.</div>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:22px;border-left:3px solid var(--teal);">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--teal);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">The Stock</div>
+        <div style="color:#fff;font-weight:500;font-size:15px;margin-bottom:10px;">A claim on a fraction of that company</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.65;">A piece of paper (now a database entry) that gives you ownership of a tiny slice of the company. Its price moves every second. The price reflects what other investors think the company is worth — which can be very different from what the company is actually worth.</div>
+      </div>
+
+    </div>
+
+    <div style="background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.2);border-radius:4px;padding:18px 22px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">↳ The big idea</div>
+      <div style="font-size:13px;color:var(--text-dim);line-height:1.7;">A great company at a terrible price is a bad investment. A mediocre company at a great price can be a fine one. Fundamental analysis isn't about finding the "best" company — it's about finding the biggest gap between what something <em>is</em> worth and what the market is currently <em>charging</em> for it.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 02 FINANCIAL STATEMENTS ══ -->
+<div class="section" id="s2">
+  <div class="container">
+    <span class="section-num">02 — FINANCIAL STATEMENTS</span>
+    <h2 class="section-title">The Three Documents That Tell You Everything</h2>
+    <p class="section-lead">Every public company is required to publish three financial statements every quarter. Together they tell you almost everything you need to know about whether a business is healthy, growing, and worth your money. Reading them isn't accounting — it's investigation. Each one answers a different question.</p>
+
+    <!-- Income Statement -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;margin-bottom:18px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--green);letter-spacing:2px;background:rgba(74,222,128,.1);padding:4px 10px;border-radius:2px;">STATEMENT 01</div>
+        <h3 style="font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin:0;">Income Statement (P&amp;L)</h3>
+      </div>
+      <div style="font-size:14px;color:var(--text-muted);font-style:italic;margin-bottom:18px;">Question it answers: <span style="color:#fff;font-style:normal;">"Did the company make money this period?"</span></div>
+
+      <!-- waterfall diagram -->
+      <div style="background:var(--bg2);border-radius:3px;padding:20px;margin-bottom:16px;">
+        <svg viewBox="0 0 600 220" style="width:100%;height:auto;">
+          <!-- Revenue bar -->
+          <rect x="20" y="40" width="80" height="160" fill="#4ade80" opacity="0.7" stroke="#22c55e" stroke-width="1"/>
+          <text x="60" y="32" fill="#94a3b8" font-size="11" font-family="IBM Plex Mono" text-anchor="middle">REVENUE</text>
+          <text x="60" y="216" fill="#fff" font-size="11" font-family="IBM Plex Mono" text-anchor="middle">100</text>
+          <!-- minus COGS -->
+          <text x="120" y="120" fill="#f87171" font-size="14" font-family="IBM Plex Mono" text-anchor="middle">−</text>
+          <rect x="140" y="40" width="80" height="60" fill="#f87171" opacity="0.4" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,3"/>
+          <text x="180" y="32" fill="#94a3b8" font-size="11" font-family="IBM Plex Mono" text-anchor="middle">COGS</text>
+          <text x="180" y="216" fill="#fff" font-size="11" font-family="IBM Plex Mono" text-anchor="middle">40</text>
+          <!-- = Gross profit -->
+          <text x="240" y="120" fill="#94a3b8" font-size="14" font-family="IBM Plex Mono" text-anchor="middle">=</text>
+          <rect x="260" y="100" width="80" height="100" fill="#2dd4bf" opacity="0.7" stroke="#0d9488" stroke-width="1"/>
+          <text x="300" y="92" fill="#94a3b8" font-size="11" font-family="IBM Plex Mono" text-anchor="middle">GROSS PROFIT</text>
+          <text x="300" y="216" fill="#fff" font-size="11" font-family="IBM Plex Mono" text-anchor="middle">60</text>
+          <!-- minus opex -->
+          <text x="360" y="120" fill="#f87171" font-size="14" font-family="IBM Plex Mono" text-anchor="middle">−</text>
+          <rect x="380" y="100" width="80" height="40" fill="#f87171" opacity="0.4" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,3"/>
+          <text x="420" y="92" fill="#94a3b8" font-size="11" font-family="IBM Plex Mono" text-anchor="middle">OPEX + TAX</text>
+          <text x="420" y="216" fill="#fff" font-size="11" font-family="IBM Plex Mono" text-anchor="middle">35</text>
+          <!-- = Net income -->
+          <text x="480" y="120" fill="#94a3b8" font-size="14" font-family="IBM Plex Mono" text-anchor="middle">=</text>
+          <rect x="500" y="140" width="80" height="60" fill="#c9a84c" opacity="0.85" stroke="#a88534" stroke-width="1"/>
+          <text x="540" y="132" fill="#c9a84c" font-size="11" font-family="IBM Plex Mono" text-anchor="middle">NET INCOME</text>
+          <text x="540" y="216" fill="#fff" font-size="11" font-family="IBM Plex Mono" text-anchor="middle">25</text>
+        </svg>
+      </div>
+
+      <p style="font-size:14px;color:var(--text-dim);line-height:1.7;margin-bottom:14px;">Top line: total revenue (sales). From that, subtract everything the company spent — cost of goods sold (COGS), operating expenses, interest, taxes. The bottom line is <strong style="color:#fff;">net income</strong>: profit. The most quoted number from this statement is <strong style="color:#fff;">EPS</strong> (Earnings Per Share) — net income divided by shares outstanding.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.6;"><strong style="color:#fff;display:block;">Gross Margin</strong>Gross profit ÷ revenue. Tells you how efficient the core business is at making each sale.</div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.6;"><strong style="color:#fff;display:block;">Operating Margin</strong>Operating income ÷ revenue. Tells you how efficient the company is overall, before financing and taxes.</div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.6;"><strong style="color:#fff;display:block;">Net Margin</strong>Net income ÷ revenue. The bottom-line profitability — what's left after everything.</div>
+      </div>
+    </div>
+
+    <!-- Balance Sheet -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;margin-bottom:18px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--indigo);letter-spacing:2px;background:rgba(129,140,248,.1);padding:4px 10px;border-radius:2px;">STATEMENT 02</div>
+        <h3 style="font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin:0;">Balance Sheet</h3>
+      </div>
+      <div style="font-size:14px;color:var(--text-muted);font-style:italic;margin-bottom:18px;">Question it answers: <span style="color:#fff;font-style:normal;">"What does the company own and owe at this exact moment?"</span></div>
+
+      <!-- balance sheet visual -->
+      <div style="background:var(--bg2);border-radius:3px;padding:20px;margin-bottom:16px;">
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:stretch;">
+          <div style="background:rgba(74,222,128,.1);border:1px solid #22c55e;border-radius:3px;padding:18px;">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--green);letter-spacing:2px;margin-bottom:8px;">ASSETS</div>
+            <div style="color:#fff;font-weight:500;font-size:13px;margin-bottom:10px;">What the company OWNS</div>
+            <div style="font-size:11px;color:var(--text-dim);line-height:1.7;">→ Cash & investments<br>→ Inventory<br>→ Receivables (money owed)<br>→ Property, plant, equipment<br>→ Intangibles (brands, IP)</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:32px;color:var(--gold);font-weight:700;">=</div>
+          <div style="display:grid;grid-template-rows:1fr 1fr;gap:8px;">
+            <div style="background:rgba(248,113,113,.1);border:1px solid #ef4444;border-radius:3px;padding:14px;">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--red);letter-spacing:2px;margin-bottom:6px;">LIABILITIES</div>
+              <div style="font-size:11px;color:var(--text-dim);line-height:1.6;">What it OWES — debt, payables, lease obligations</div>
+            </div>
+            <div style="background:rgba(201,168,76,.1);border:1px solid #c9a84c;border-radius:3px;padding:14px;">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--gold);letter-spacing:2px;margin-bottom:6px;">EQUITY</div>
+              <div style="font-size:11px;color:var(--text-dim);line-height:1.6;">What's left for shareholders — Assets minus Liabilities</div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);margin-top:14px;letter-spacing:1px;">THE FUNDAMENTAL ACCOUNTING EQUATION — ALWAYS BALANCES</div>
+      </div>
+
+      <p style="font-size:14px;color:var(--text-dim);line-height:1.7;margin-bottom:14px;">A snapshot at one moment in time. The Income Statement is a movie of what happened over a quarter — the Balance Sheet is a still photo of what the company looks like on the last day of that quarter.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.6;"><strong style="color:#fff;display:block;">Debt-to-Equity</strong>How much the company borrows vs. what shareholders own. High debt = fragile in bad years.</div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.6;"><strong style="color:#fff;display:block;">Current Ratio</strong>Short-term assets ÷ short-term liabilities. Above 1 means the company can pay its bills this year.</div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.6;"><strong style="color:#fff;display:block;">Book Value</strong>Total equity. The accounting "worth" of the company. Often very different from market value.</div>
+      </div>
+    </div>
+
+    <!-- Cash Flow -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--teal);letter-spacing:2px;background:rgba(45,212,191,.1);padding:4px 10px;border-radius:2px;">STATEMENT 03</div>
+        <h3 style="font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin:0;">Cash Flow Statement</h3>
+      </div>
+      <div style="font-size:14px;color:var(--text-muted);font-style:italic;margin-bottom:18px;">Question it answers: <span style="color:#fff;font-style:normal;">"Where did real cash actually go?"</span></div>
+
+      <!-- 3 buckets -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px;">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:3px;padding:16px;border-top:2px solid var(--green);">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">OPERATING</div>
+          <div style="color:#fff;font-weight:500;font-size:13px;margin-bottom:6px;">Cash from running the business</div>
+          <div style="font-size:11px;color:var(--text-dim);line-height:1.6;">Cash actually collected from customers, minus cash paid to suppliers and employees. The most important section — a healthy business should always be cash-positive here.</div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:3px;padding:16px;border-top:2px solid var(--blue);">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--blue);letter-spacing:2px;margin-bottom:6px;">INVESTING</div>
+          <div style="color:#fff;font-weight:500;font-size:13px;margin-bottom:6px;">Cash spent on the future</div>
+          <div style="font-size:11px;color:var(--text-dim);line-height:1.6;">Buying factories, equipment, acquisitions. Usually negative for growing companies — they're plowing money back in. Watch capex closely.</div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:3px;padding:16px;border-top:2px solid var(--indigo);">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--indigo);letter-spacing:2px;margin-bottom:6px;">FINANCING</div>
+          <div style="color:#fff;font-weight:500;font-size:13px;margin-bottom:6px;">Cash from/to lenders & owners</div>
+          <div style="font-size:11px;color:var(--text-dim);line-height:1.6;">Borrowing, repaying debt, paying dividends, issuing or buying back shares. Tells you how the company funds itself.</div>
+        </div>
+      </div>
+
+      <p style="font-size:14px;color:var(--text-dim);line-height:1.7;">The most important number on this statement is <strong style="color:#fff;">Free Cash Flow</strong> — operating cash minus capital expenditures. That's the actual cash the business throws off after paying to maintain itself. Companies can fake earnings with accounting tricks, but real cash is much harder to manufacture.</p>
+    </div>
+
+    <div style="background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.2);border-radius:4px;padding:18px 22px;margin-top:24px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">↳ The single most important lesson</div>
+      <div style="font-size:13px;color:var(--text-dim);line-height:1.7;"><strong style="color:#fff;">Profit isn't cash, and cash isn't profit.</strong> A company can show "profits" on the income statement while bleeding cash — by booking sales it hasn't been paid for yet, or capitalising costs that should be expenses. Companies almost never go bankrupt because of low profits. They go bankrupt because they run out of cash. Always check both statements together.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 03 VALUATION RATIOS ══ -->
+<div class="section" id="s3">
+  <div class="container">
+    <span class="section-num">03 — VALUATION RATIOS</span>
+    <h2 class="section-title">Shortcuts to Compare Companies Fast</h2>
+    <p class="section-lead">Once you can read the statements, you have the raw materials to value a company. But you don't always have time to do it from scratch — so professionals use ratios as quick comparison shortcuts. Each ratio answers a specific question. None of them is the answer by itself.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-bottom:24px;">
+
+      <!-- P/E -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:22px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Ratio 01</div>
+        <div style="font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin-bottom:6px;">P/E Ratio</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--gold);margin-bottom:14px;">Price ÷ Earnings per Share</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.65;margin-bottom:10px;">"How many years of current earnings am I paying for one share?" A P/E of 12 means: if earnings stayed flat, you'd recover your purchase price in 12 years.</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.55;"><strong style="color:#fff;">Low P/E:</strong> cheap, or genuinely struggling. <br><strong style="color:#fff;">High P/E:</strong> expensive, or growing fast enough to justify it.</div>
+      </div>
+
+      <!-- P/B -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:22px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--teal);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Ratio 02</div>
+        <div style="font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin-bottom:6px;">P/B Ratio</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--teal);margin-bottom:14px;">Price ÷ Book Value per Share</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.65;margin-bottom:10px;">"How much am I paying per dollar of accounting equity?" Most useful for asset-heavy businesses — banks, real estate, industrials. Less useful for tech and brands where most value is intangible.</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.55;"><strong style="color:#fff;">P/B &lt; 1:</strong> trading below book value — possible bargain or warning sign. <br><strong style="color:#fff;">P/B &gt; 3:</strong> market believes the company is worth far more than its accounting books say.</div>
+      </div>
+
+      <!-- Dividend Yield -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:22px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--green);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Ratio 03</div>
+        <div style="font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin-bottom:6px;">Dividend Yield</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--green);margin-bottom:14px;">Annual Dividend ÷ Share Price</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.65;margin-bottom:10px;">"What cash return am I getting just from holding this?" A dividend yield of 6% means you'd earn 6% per year in cash dividends, before any price change. Compare to bank deposit rates and bond yields.</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.55;"><strong style="color:#fff;">Caution:</strong> very high yields (e.g. 15%+) often mean the market expects the dividend to be cut soon.</div>
+      </div>
+
+      <!-- EV/EBITDA -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:22px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--indigo);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Ratio 04</div>
+        <div style="font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin-bottom:6px;">EV/EBITDA</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--indigo);margin-bottom:14px;">Enterprise Value ÷ EBITDA</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.65;margin-bottom:10px;">A more "neutral" version of P/E. EV adjusts for debt and cash; EBITDA strips out tax and accounting noise. Useful for comparing companies with different debt levels — e.g. a heavily-leveraged real estate company vs. a debt-free tech firm.</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.55;">Used heavily in M&amp;A and private-equity valuation. Rough rule: 8–10x is "normal" for mature businesses.</div>
+      </div>
+
+      <!-- ROE -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:22px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--orange);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Ratio 05</div>
+        <div style="font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin-bottom:6px;">ROE</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--orange);margin-bottom:14px;">Net Income ÷ Equity</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.65;margin-bottom:10px;">"For every pound of shareholder money, how much profit does the business generate?" The cleanest single measure of how good a business is at compounding capital. Buffett's favourite metric.</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.55;"><strong style="color:#fff;">ROE &gt; 15%</strong> consistently is exceptional. <br><strong style="color:#fff;">ROE &lt; 10%</strong> is mediocre.</div>
+      </div>
+
+      <!-- PEG -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:22px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--blue);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Ratio 06</div>
+        <div style="font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin-bottom:6px;">PEG Ratio</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--blue);margin-bottom:14px;">P/E ÷ Earnings Growth Rate</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.65;margin-bottom:10px;">P/E adjusted for growth. A P/E of 30 sounds expensive — but if earnings are growing 30% per year, the PEG is 1.0, which is fair. The classic Peter Lynch rule: <strong style="color:#fff;">PEG below 1 is interesting; above 2 is expensive.</strong></div>
+      </div>
+
+    </div>
+
+    <div style="background:rgba(248,113,113,.05);border:1px solid rgba(248,113,113,.2);border-radius:4px;padding:18px 22px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--red);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">↳ A high P/E isn't always "expensive"</div>
+      <div style="font-size:13px;color:var(--text-dim);line-height:1.7;">A P/E of 8 on a declining business is more expensive than a P/E of 25 on a business growing 30% a year. The ratio is meaningless without context: industry, growth rate, debt load, profitability trend. <strong style="color:#fff;">Ratios are starting points for questions, not answers.</strong></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 04 SECTOR LENSES ══ -->
+<div class="section" id="s4">
+  <div class="container">
+    <span class="section-num">04 — SECTOR LENSES</span>
+    <h2 class="section-title">Different Businesses Need Different Lenses</h2>
+    <p class="section-lead">A bank doesn't work like a tech company. A real estate developer doesn't work like a telecoms operator. Applying the same ratios across all sectors produces nonsense — banks always look "cheap" on P/B, tech companies always look "expensive" on P/E. Each sector has its own playbook of what to look at first.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px;">
+
+      <!-- Banks -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:22px;border-top:3px solid var(--gold);">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Sector — Banks</div>
+        <div style="color:#fff;font-weight:500;font-size:15px;margin-bottom:10px;">Examples: CIB, QNB, Faisal Islamic Bank</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.65;margin-bottom:12px;">Banks make money on the spread between what they pay depositors and what they charge borrowers. P/E is less informative — use these instead:</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.7;">→ <strong style="color:#fff;">ROE</strong> — best banks compound at 18–25%<br>→ <strong style="color:#fff;">NIM</strong> (Net Interest Margin) — wider is better<br>→ <strong style="color:#fff;">NPL Ratio</strong> — non-performing loans, lower is better<br>→ <strong style="color:#fff;">Capital Adequacy</strong> — regulatory cushion against losses<br>→ <strong style="color:#fff;">P/B</strong> — most-watched valuation metric</div>
+      </div>
+
+      <!-- Industrials -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:22px;border-top:3px solid var(--blue);">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--blue);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Sector — Industrials &amp; Materials</div>
+        <div style="color:#fff;font-weight:500;font-size:15px;margin-bottom:10px;">Examples: Ezz Steel, Sidi Kerir Petrochemicals, Cleopatra Hospitals</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.65;margin-bottom:12px;">Cyclical, capital-heavy. Profits swing wildly with commodity prices and the broader economy. Watch:</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.7;">→ <strong style="color:#fff;">Operating Margin</strong> — efficiency at converting sales to profit<br>→ <strong style="color:#fff;">Debt-to-Equity</strong> — capital-heavy = dangerous if leveraged<br>→ <strong style="color:#fff;">Capacity Utilisation</strong> — are factories running full?<br>→ <strong style="color:#fff;">EV/EBITDA</strong> — neutralises debt differences</div>
+      </div>
+
+      <!-- Real Estate -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:22px;border-top:3px solid var(--teal);">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--teal);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Sector — Real Estate</div>
+        <div style="color:#fff;font-weight:500;font-size:15px;margin-bottom:10px;">Examples: Talaat Moustafa, Palm Hills, SODIC</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.65;margin-bottom:12px;">Two business models: developers (build &amp; sell) vs. landlords (build &amp; rent). Different metrics for each:</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.7;">→ <strong style="color:#fff;">NAV</strong> (Net Asset Value) — sum-of-parts land &amp; project value<br>→ <strong style="color:#fff;">P/NAV</strong> — trading at a discount or premium to NAV?<br>→ <strong style="color:#fff;">Pre-sales backlog</strong> — units sold but not yet delivered<br>→ <strong style="color:#fff;">Land bank</strong> — undeveloped land at cost vs. market value</div>
+      </div>
+
+      <!-- Telecom -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:22px;border-top:3px solid var(--indigo);">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--indigo);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Sector — Telecoms</div>
+        <div style="color:#fff;font-weight:500;font-size:15px;margin-bottom:10px;">Examples: Telecom Egypt (Orange), Vodafone</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.65;margin-bottom:12px;">Subscription businesses with heavy infrastructure costs. Recurring revenue, slow growth, high cash flow. The lens is:</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.7;">→ <strong style="color:#fff;">ARPU</strong> (Average Revenue Per User) — going up or down?<br>→ <strong style="color:#fff;">Churn</strong> — % of subscribers leaving each year<br>→ <strong style="color:#fff;">Capex Intensity</strong> — capital spending vs. revenue<br>→ <strong style="color:#fff;">Free Cash Flow Yield</strong> — what % of price the business generates in cash</div>
+      </div>
+
+      <!-- Consumer -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:22px;border-top:3px solid var(--orange);">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--orange);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Sector — Consumer &amp; Retail</div>
+        <div style="color:#fff;font-weight:500;font-size:15px;margin-bottom:10px;">Examples: Edita, Juhayna, Eastern Tobacco</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.65;margin-bottom:12px;">Brand value, distribution, and consumer purchasing power. Sensitive to inflation, FX, and disposable income.</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.7;">→ <strong style="color:#fff;">Same-store sales growth</strong> — organic vs. expansion-driven<br>→ <strong style="color:#fff;">Gross Margin</strong> — pricing power vs. competitors<br>→ <strong style="color:#fff;">Brand strength</strong> — qualitative but matters<br>→ <strong style="color:#fff;">Inventory turnover</strong> — how fast products move</div>
+      </div>
+
+      <!-- Brokerage -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:22px;border-top:3px solid var(--red);">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--red);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Sector — Financial Services</div>
+        <div style="color:#fff;font-weight:500;font-size:15px;margin-bottom:10px;">Examples: EFG Hermes (EFGD), Beltone, CI Capital</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.65;margin-bottom:12px;">Brokerages, asset managers, and investment banks. Revenue tied to market activity — volumes, IPOs, M&amp;A pipeline.</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.7;">→ <strong style="color:#fff;">Brokerage market share</strong> — how much of EGX volume<br>→ <strong style="color:#fff;">AUM</strong> (Assets Under Management) — recurring fee base<br>→ <strong style="color:#fff;">Fee income vs. principal income</strong> — quality of revenue<br>→ <strong style="color:#fff;">Cost-to-income ratio</strong> — operational efficiency</div>
+      </div>
+
+    </div>
+
+    <div style="background:rgba(45,212,191,.05);border:1px solid rgba(45,212,191,.2);border-radius:4px;padding:18px 22px;margin-top:24px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--teal);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">↳ Always compare like-for-like</div>
+      <div style="font-size:13px;color:var(--text-dim);line-height:1.7;">When you look up a company's P/E, immediately check the average P/E for its sector. CIB at P/E 8 may be cheap for the EGX market overall but expensive vs. other Egyptian banks. The benchmark is always the peer group, not the index.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 05 THE CHECKLIST ══ -->
+<div class="section" id="s5">
+  <div class="container">
+    <span class="section-num">05 — THE CHECKLIST</span>
+    <h2 class="section-title">A Beginner's Mental Framework</h2>
+    <p class="section-lead">After all the ratios and statements and sector lenses — when you sit down with a real company, what do you actually ask? Here's a simple four-question checklist that filters out 90% of bad ideas before you even open a chart.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:28px;">
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;border-left:3px solid var(--green);">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--green);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Question 01</div>
+        <div style="color:#fff;font-weight:600;font-size:17px;margin-bottom:10px;">Does it make money?</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.7;margin-bottom:8px;">Open the income statement. Has the company been profitable for the last 3+ years? Is operating cash flow consistently positive? If not — why are you even looking at this?</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.55;">Companies that don't make money can still be great investments — but only if you have a specific thesis for why that changes. Most retail investors don't.</div>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;border-left:3px solid var(--blue);">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--blue);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Question 02</div>
+        <div style="color:#fff;font-weight:600;font-size:17px;margin-bottom:10px;">Can it survive a bad year?</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.7;margin-bottom:8px;">Open the balance sheet. Is there cash on hand? Is debt manageable relative to earnings and equity? In Egypt specifically — does it have FX exposure that could blow up the next time the pound moves?</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.55;">A great business with a fragile balance sheet can go bankrupt in a single bad year. Survival comes before growth.</div>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;border-left:3px solid var(--gold);">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Question 03</div>
+        <div style="color:#fff;font-weight:600;font-size:17px;margin-bottom:10px;">Is the price reasonable?</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.7;margin-bottom:8px;">Compare its valuation ratios (P/E, P/B, EV/EBITDA, dividend yield) to the sector average and to its own history. Is it more expensive than usual? Cheaper? Why?</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.55;">"Reasonable" doesn't mean "cheap." Sometimes the answer is "yes, this is fairly priced for a great business" — that's still investable.</div>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;border-left:3px solid var(--indigo);">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--indigo);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">Question 04</div>
+        <div style="color:#fff;font-weight:600;font-size:17px;margin-bottom:10px;">Do I trust management?</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.7;margin-bottom:8px;">Read the latest annual report — specifically the management letter. Are they straight with shareholders about challenges? Have they done what they said they'd do over the past few years? Do they own meaningful equity themselves?</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.55;">The numbers are made by people. If management isn't trustworthy, the numbers can't be either.</div>
+      </div>
+
+    </div>
+
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:28px;margin-bottom:24px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">↳ Why retail investors really lose</div>
+      <div style="font-size:14px;color:var(--text-dim);line-height:1.75;">Most retail investors don't lose because they pick fundamentally bad companies. They lose because they:</div>
+      <div style="font-size:13px;color:var(--text-dim);line-height:1.85;margin-top:12px;padding-left:20px;">→ Pay too much for good companies (buying after the story is already in the price)<br>→ Sell good companies too early (taking small wins, missing the compounding)<br>→ Average down on bad companies (turning a small loss into a catastrophic one)<br>→ Confuse a falling stock price with a falling company (and panic-sell at the bottom)</div>
+      <div style="font-size:14px;color:var(--text-dim);line-height:1.75;margin-top:14px;">Fundamentals don't make those mistakes go away. But knowing them <em>helps</em>. When the price drops 30% on a company you fundamentally understand, you can decide whether the business actually changed — or whether the market is just panicking. That's the difference between buying when the price is right and selling when the price is wrong.</div>
+    </div>
+
+    <div style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.25);border-radius:4px;padding:32px;text-align:center;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:3px;text-transform:uppercase;margin-bottom:18px;">END OF SERIES</div>
+      <div style="font-family:'Playfair Display',serif;font-size:26px;color:#fff;line-height:1.4;margin-bottom:18px;">You now have the foundation.</div>
+      <div style="font-size:14px;color:var(--text-dim);line-height:1.75;max-width:580px;margin:0 auto 16px;">Across five sessions, you've learned how markets work, what you can trade, how people approach the game, how to read a chart, and how to read a company. None of this makes you a great trader. But it makes you a literate one — someone who can pick up a research report, an annual filing, or a price chart and understand what they're looking at.</div>
+      <div style="font-size:14px;color:var(--text-dim);line-height:1.75;max-width:580px;margin:0 auto;">From here, the path forward is your own choice: keep learning, start small, and remember the line from Session 3 — <strong style="color:#fff;">surviving long enough to learn is the entire game.</strong></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// NAV
+function goTo(id){document.getElementById(id).scrollIntoView({behavior:'smooth',block:'start'});}
+const sids=['s1','s2','s3','s4','s5'];
+const nitems=document.querySelectorAll('.nav-item');
+window.addEventListener('scroll',()=>{
+  let cur='';
+  sids.forEach(id=>{const el=document.getElementById(id);if(el&&el.getBoundingClientRect().top<140)cur=id;});
+  nitems.forEach((n,i)=>n.classList.toggle('active',sids[i]===cur));
+});
+
+Chart.defaults.color='#64748b';
+Chart.defaults.borderColor='#1e2d42';
+
+</script>
+<script src="/review-overlay.js"></script>
+</body>
+</html>

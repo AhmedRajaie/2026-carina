@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part 02 — Why Algos at All? | EFG Hermes Algo Track</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0e14;--bg2:#0f1620;--bg3:#141d2b;--card:#111827;--border:#1e2d42;
+  --gold:#c9a84c;--gold-light:#e8c96a;--teal:#2dd4bf;--teal-dim:#0d9488;
+  --red:#f87171;--green:#4ade80;--text:#e2e8f0;--text-dim:#94a3b8;--text-muted:#4a5568;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:15px;line-height:1.7;overflow-x:hidden;}
+
+/* BACK BUTTON */
+.back-btn{position:absolute;top:24px;left:24px;display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--text-muted);text-decoration:none;text-transform:uppercase;border:1px solid var(--border);padding:6px 14px;border-radius:2px;transition:all .2s;z-index:10;}
+.back-btn:hover{border-color:var(--gold);color:var(--gold);}
+.back-btn::before{content:'←';margin-right:2px;}
+
+/* HEADER */
+header{position:relative;padding:60px 0 80px;text-align:center;overflow:hidden;border-bottom:1px solid var(--border);}
+header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(201,168,76,.12) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 80% 50%,rgba(45,212,191,.06) 0%,transparent 60%);}
+.efg-logo{display:inline-flex;align-items:center;gap:10px;margin-bottom:32px;position:relative;}
+.efg-logo-mark{width:36px;height:36px;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:700;color:var(--gold);font-size:14px;letter-spacing:1px;}
+.efg-logo-text{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase;}
+.session-tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--teal);border:1px solid var(--teal-dim);padding:4px 14px;border-radius:2px;margin-bottom:20px;position:relative;}
+h1{font-family:'Playfair Display',serif;font-size:clamp(36px,5vw,64px);font-weight:900;line-height:1.1;position:relative;background:linear-gradient(135deg,#fff 30%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px;}
+.subtitle{color:var(--text-dim);font-size:16px;max-width:520px;margin:0 auto;position:relative;}
+.progress-bar-wrap{display:flex;justify-content:center;gap:6px;margin-top:40px;position:relative;}
+.prog-dot{width:32px;height:4px;border-radius:2px;background:var(--border);}
+.prog-dot.active{background:var(--gold);}
+.prog-dot.current{background:var(--teal);}
+
+/* LAYOUT */
+.container{max-width:960px;margin:0 auto;padding:0 24px;}
+.section{padding:64px 0;border-bottom:1px solid var(--border);}
+.section-num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:3px;margin-bottom:8px;display:block;}
+.section-title{font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:#fff;margin-bottom:8px;}
+.section-lead{color:var(--text-dim);font-size:15px;max-width:580px;margin-bottom:40px;}
+
+/* PROSE */
+.prose{color:var(--text-dim);font-size:15px;line-height:1.8;margin-bottom:28px;max-width:720px;}
+.prose strong{color:#fff;}
+.prose em{color:var(--gold);font-style:normal;}
+.prose + .prose{margin-top:-8px;}
+
+/* RULE / QUOTE BLOCK */
+.rule-block{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:4px;padding:28px 32px;margin-bottom:24px;}
+.rule-block blockquote{font-family:'IBM Plex Mono',monospace;font-size:14px;color:#fff;line-height:1.8;font-style:normal;}
+.rule-block blockquote strong{color:var(--gold);}
+
+/* CALLOUT */
+.callout{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:4px;padding:14px 20px;margin-bottom:24px;font-size:13px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;line-height:1.6;}
+.callout strong{color:#fff;}
+
+/* ── COMPOUND MATH HERO ── */
+.compound-hero{background:var(--card);border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-bottom:32px;}
+.compound-hero-header{padding:16px 28px;border-bottom:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;}
+.compound-rows{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border);}
+.compound-col{padding:32px 28px;position:relative;overflow:hidden;}
+.compound-col:first-child{border-right:1px solid var(--border);}
+.compound-col::before{content:'';position:absolute;inset:0;pointer-events:none;}
+.compound-col.low::before{background:radial-gradient(ellipse 120% 120% at 50% 110%,rgba(45,212,191,.06) 0%,transparent 70%);}
+.compound-col.high::before{background:radial-gradient(ellipse 120% 120% at 50% 110%,rgba(201,168,76,.08) 0%,transparent 70%);}
+.compound-rate{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;margin-bottom:12px;}
+.compound-formula{font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--text-dim);margin-bottom:20px;padding:10px 14px;background:var(--bg3);border-radius:3px;border:1px solid var(--border);}
+.compound-result-num{font-family:'Playfair Display',serif;font-size:clamp(48px,6vw,72px);font-weight:900;line-height:1;margin-bottom:8px;}
+.compound-col.low .compound-result-num{color:var(--teal);}
+.compound-col.high .compound-result-num{color:var(--gold);}
+.compound-result-label{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;}
+.compound-result-desc{font-size:13px;color:var(--text-dim);line-height:1.5;}
+.compound-footnote{padding:16px 28px;font-size:13px;color:var(--text-muted);font-family:'IBM Plex Mono',monospace;line-height:1.6;}
+
+/* ── PART DIVIDER ── */
+.part-divider{padding:48px 0;border-bottom:1px solid var(--border);border-top:1px solid var(--border);background:var(--bg3);position:relative;overflow:hidden;}
+.part-divider::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 100% at 50% 50%,rgba(248,113,113,.05) 0%,transparent 70%);}
+.part-divider-inner{max-width:960px;margin:0 auto;padding:0 24px;display:flex;align-items:center;gap:32px;}
+.part-divider-line{flex:1;height:1px;background:var(--border);}
+.part-divider-badge{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--red);text-transform:uppercase;border:1px solid rgba(248,113,113,.3);padding:8px 20px;border-radius:2px;flex-shrink:0;background:rgba(248,113,113,.05);}
+.part-divider-label{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:1px;margin-top:12px;text-align:center;}
+
+/* ── ADVANTAGES / LIMITS ITEMS ── */
+.item-list{display:flex;flex-direction:column;gap:0;margin-bottom:32px;}
+.item-entry{padding:28px 0;border-bottom:1px solid var(--border);}
+.item-entry:last-child{border-bottom:none;}
+.item-head{display:flex;align-items:baseline;gap:16px;margin-bottom:12px;}
+.item-num{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;flex-shrink:0;min-width:32px;}
+.case .item-num{color:var(--teal);}
+.limits .item-num{color:var(--red);}
+.item-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:#fff;}
+.item-body{color:var(--text-dim);font-size:15px;line-height:1.8;max-width:680px;padding-left:48px;}
+.item-body strong{color:#fff;}
+.item-body em{color:var(--gold);font-style:normal;}
+
+/* WHEN GRID */
+.when-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px;}
+.when-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px 28px;}
+.when-label{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;}
+.when-label.yes{color:var(--teal);}
+.when-label.no{color:var(--red);}
+.when-list{list-style:none;padding:0;display:flex;flex-direction:column;gap:10px;}
+.when-list li{font-size:13px;color:var(--text-dim);line-height:1.6;padding-left:20px;position:relative;}
+.when-list li::before{position:absolute;left:0;font-family:'IBM Plex Mono',monospace;font-size:11px;}
+.when-card.yes .when-list li::before{content:'✓';color:var(--teal);}
+.when-card.no .when-list li::before{content:'✗';color:var(--red);}
+
+/* TAKEAWAYS */
+.takeaway-wrap{background:linear-gradient(135deg,rgba(201,168,76,.06),rgba(45,212,191,.04));border:1px solid rgba(201,168,76,.25);border-radius:4px;padding:36px 40px;margin-top:16px;}
+.takeaway-heading{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:20px;}
+.takeaway-list{list-style:none;padding:0;}
+.takeaway-list li{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);font-size:14px;color:var(--text-dim);line-height:1.6;}
+.takeaway-list li:last-child{border-bottom:none;}
+.takeaway-list li::before{content:'✓';color:var(--teal);font-family:'IBM Plex Mono',monospace;font-size:12px;flex-shrink:0;margin-top:2px;}
+.takeaway-list li strong{color:#fff;}
+
+/* NEXT CARD */
+.next-card{background:linear-gradient(135deg,rgba(201,168,76,.08),rgba(45,212,191,.05));border:1px solid var(--gold);border-radius:4px;padding:32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;margin-top:40px;}
+.next-label{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;margin-bottom:8px;}
+.next-title{font-family:'Playfair Display',serif;font-size:22px;color:#fff;}
+.next-btn{background:var(--gold);color:#000;border:none;padding:12px 28px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1px;cursor:pointer;border-radius:2px;text-transform:uppercase;font-weight:500;transition:background .15s;}
+.next-btn:hover{background:var(--gold-light);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.section{animation:fadeUp .5s ease both;}
+
+@media(max-width:700px){
+  .compound-rows{grid-template-columns:1fr;}
+  .compound-col:first-child{border-right:none;border-bottom:1px solid var(--border);}
+  .when-grid{grid-template-columns:1fr;}
+  .item-body{padding-left:0;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <a class="back-btn" href="/learn/algo-track">Algo Track</a>
+  <div class="container">
+    <div class="efg-logo">
+      <div class="efg-logo-mark">EFG</div>
+      <div class="efg-logo-text">Hermes · Algo Track</div>
+    </div>
+    <div class="session-tag">PART 02 / 07</div>
+    <h1>Why Algos<br>at All?</h1>
+    <p class="subtitle">What algos actually give you — and what they don't. The case and the limits, kept equally honest.</p>
+    <div class="progress-bar-wrap">
+      <div class="prog-dot active"></div>
+      <div class="prog-dot current"></div>
+      <div class="prog-dot"></div>
+      <div class="prog-dot"></div>
+      <div class="prog-dot"></div>
+      <div class="prog-dot"></div>
+      <div class="prog-dot"></div>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════
+     INTRO
+════════════════════════════════════════════ -->
+<div class="section">
+  <div class="container">
+    <span class="section-num">00 — FRAMING</span>
+    <h2 class="section-title">Why This Part Matters</h2>
+    <p class="section-lead">Most people approach algorithmic trading the wrong way — "how do I build one" before "should I use one at all."</p>
+    <p class="prose">That's how you end up with a half-built system you don't know what to do with. The honest answer is: algos give you <strong>specific advantages</strong> over manual trading, and they come with <strong>specific limits</strong>. Knowing both is the difference between using algos as a tool and using them as a religion.</p>
+    <p class="prose">This part walks through five real advantages — then four limits, kept just as honest.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     THE CASE — 5 ADVANTAGES
+════════════════════════════════════════════ -->
+<div class="section">
+  <div class="container">
+    <span class="section-num">01 — THE CASE</span>
+    <h2 class="section-title">Five Real Advantages</h2>
+    <p class="section-lead">Not theoretical advantages. Structural ones — things a computer does that a human cannot replicate regardless of discipline or experience.</p>
+
+    <div class="item-list case">
+
+      <!-- 1. No emotion -->
+      <div class="item-entry">
+        <div class="item-head">
+          <span class="item-num">01</span>
+          <h3 class="item-title">No Emotion</h3>
+        </div>
+        <div class="item-body">
+          <p>This is the one that matters most. A human looking at a losing position <em>feels something</em> — fear that it'll keep falling, regret about the entry, hope it'll recover. Those feelings change behavior: you exit too early, you hold too long, you skip the next signal because you got burned by the last one.</p>
+          <br>
+          <p>A computer doesn't feel any of that. It applies the rule the way it was written, on the trade you're scared of and on the next one and the one after that. The rule itself might be wrong. But the rule is <strong>applied consistently</strong> — which is the prerequisite to even knowing whether the rule is wrong.</p>
+          <br>
+          <p>Most retail traders don't lose money because they don't know the rules. They lose money because they can't follow their own rules when it matters. The algo removes that gap.</p>
+        </div>
+      </div>
+
+      <!-- 2. Consistency compounds -->
+      <div class="item-entry">
+        <div class="item-head">
+          <span class="item-num">02</span>
+          <h3 class="item-title">Small Edges Only Matter If You Can Repeat Them</h3>
+        </div>
+        <div class="item-body">
+          <p>Small edges are not useful because they sound exciting. They are useful because, <em>if they are real</em>, repetition lets them compound. The hard part is not understanding the math. The hard part is applying the same rule again and again when you're tired, scared, bored, or tempted to interfere.</p>
+          <br>
+          <p>To see why consistency matters, exaggerate the example for a moment. A strategy that makes 0.5% every trading day is extremely rare. This is not a target. It is a thought experiment that shows why breaking your own rules destroys the only thing small edges have going for them: repetition.</p>
+        </div>
+
+        <!-- MATH HERO -->
+        <div class="compound-hero" style="margin-top:24px;">
+          <div class="compound-hero-header">250 Trading Days · Consistency Effect</div>
+          <div class="compound-rows">
+            <div class="compound-col low">
+              <div class="compound-rate">Consistent execution</div>
+              <div class="compound-formula">(1.005)²⁵⁰ ≈ 3.47</div>
+              <div class="compound-result-num">+247%</div>
+              <div class="compound-result-label">Full chain</div>
+              <div class="compound-result-desc">A half-percent a day, repeated across a full trading year without interruption, becomes much larger than intuition expects.</div>
+            </div>
+            <div class="compound-col high">
+              <div class="compound-rate">Broken execution</div>
+              <div class="compound-formula">(1.005)¹²⁰ ≈ 1.82</div>
+              <div class="compound-result-num">+82%</div>
+              <div class="compound-result-label">Interrupted chain</div>
+              <div class="compound-result-desc">Same daily edge, but only 120 effective days because signals were skipped, exits were overridden, or fear kept you out after losses.</div>
+            </div>
+          </div>
+          <div class="compound-footnote">
+            ↳ The lesson is not that daily profits are easy. They are not. The lesson is that <strong>consistency is the multiplier</strong>. A human breaks the chain: skips signals, overrides rules, hesitates after losses, gets greedy after wins. An algo does not make the edge better — it protects the repetition.
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Emotionally flat at scale -->
+      <div class="item-entry">
+        <div class="item-head">
+          <span class="item-num">03</span>
+          <h3 class="item-title">Emotionally Flat at Scale</h3>
+        </div>
+        <div class="item-body">
+          <p>A trader managing EGP 10,000 can be perfectly disciplined. Same trader, same rules, managing EGP 1,000,000: completely different behavior. A 5% drawdown on the small account is EGP 500. On the large account it's EGP 50,000. The <em>percentages are identical</em>. The emotional weight is not.</p>
+          <br>
+          <p>This is one of the most underappreciated reasons professional traders fail. They had a winning system at small size and watched it fall apart at large size — not because the system stopped working, but because <em>they</em> did.</p>
+          <br>
+          <p>An algo doesn't care. The same code that placed a 100-share order places a 10,000-share order — no hesitation, no second-guessing, no white-knuckling the keyboard. This is a real, structural edge as your capital grows. It's also why proprietary trading firms use algos for size — not because algos are smarter than their best traders, but because they're <strong>emotionally invariant to size</strong> in a way humans never quite manage.</p>
+        </div>
+      </div>
+
+      <!-- 4. Coverage -->
+      <div class="item-entry">
+        <div class="item-head">
+          <span class="item-num">04</span>
+          <h3 class="item-title">24/7 Coverage Across the Whole Market</h3>
+        </div>
+        <div class="item-body">
+          <p>A human watches a handful of stocks during market hours. An algo monitors every listed name simultaneously, every minute. On EGX alone there are over 200 listed companies. A discretionary trader will follow maybe ten closely. The other 190+ are invisible to them — opportunities they will never see, even if those opportunities are obvious by the numbers.</p>
+          <br>
+          <p>This isn't about being faster than human reflexes. It's about <strong>coverage</strong>. The algo's edge isn't always speed; sometimes it's that you literally cannot be watching what it's watching, when it's watching, at the breadth it's watching.</p>
+        </div>
+      </div>
+
+      <!-- 5. Backtestability -->
+      <div class="item-entry">
+        <div class="item-head">
+          <span class="item-num">05</span>
+          <h3 class="item-title">Backtestability — Testing Ideas Without Losing Money</h3>
+        </div>
+        <div class="item-body">
+          <p>Manual trading gives you exactly one timeline — the one you're living through. Every lesson costs real money. Every iteration takes weeks or months to play out.</p>
+          <br>
+          <p>Algos give you a <strong>flight simulator</strong>. You can test 100 strategy variations in an afternoon. You can see how a strategy would have behaved in 2008, in 2020, in 2022. You can rule out bad ideas without paying for them. This doesn't guarantee anything — backtests lie in specific, well-known ways, which is the entire subject of Part 4. But the ability to falsify an idea <em>before</em> you risk capital is something manual trading simply cannot offer.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     DIVIDER
+════════════════════════════════════════════ -->
+<div class="part-divider">
+  <div class="part-divider-inner">
+    <div class="part-divider-line"></div>
+    <div class="part-divider-badge">Now the Limits</div>
+    <div class="part-divider-line"></div>
+  </div>
+  <div style="text-align:center;margin-top:16px;position:relative;">
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;">Five advantages above · Four limits below · Both matter equally</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     THE LIMITS — 4
+════════════════════════════════════════════ -->
+<div class="section">
+  <div class="container">
+    <span class="section-num">02 — THE LIMITS</span>
+    <h2 class="section-title">Four Honest Limits</h2>
+    <p class="section-lead">Every advantage above has a shadow. These aren't edge cases — they're the reasons most algo traders fail despite having working systems.</p>
+
+    <div class="item-list limits">
+
+      <!-- L1 -->
+      <div class="item-entry">
+        <div class="item-head">
+          <span class="item-num">L1</span>
+          <h3 class="item-title">An Algo Is Only as Good as Its Logic</h3>
+        </div>
+        <div class="item-body">
+          <p>A computer following bad rules consistently will lose money consistently. The discipline of an algo is <em>value-neutral</em> — it amplifies whatever you put in. If your logic has an edge, you scale that edge. If your logic doesn't, you scale your losses.</p>
+          <br>
+          <p>This is why building an algo is mostly a <strong>thinking problem, not a coding problem</strong>. The code is the easy part. Figuring out what the rules should actually be — what edge you're trying to exploit — is the hard part, and no amount of clever engineering substitutes for it.</p>
+          <br>
+          <p>Common failure mode: beautifully engineered system, no real edge. The system runs perfectly. The strategy bleeds slowly. The engineering excellence is irrelevant.</p>
+        </div>
+      </div>
+
+      <!-- L2 -->
+      <div class="item-entry">
+        <div class="item-head">
+          <span class="item-num">L2</span>
+          <h3 class="item-title">Markets Change — Strategies Decay</h3>
+        </div>
+        <div class="item-body">
+          <p>Every working strategy exploits some kind of market behavior. As more traders discover the same behavior — and as the conditions that created it shift — the edge erodes. This is called <strong>alpha decay</strong>, and it's universal.</p>
+          <br>
+          <p>The strategy that returned 30% a year from 2018–2022 might return 8% in 2023–2025, then break even, then lose money. Not because anything got broken — because the inefficiency it exploited got crowded out.</p>
+          <br>
+          <div class="callout">↳ Building a strategy and walking away is not a viable plan. We cover how to detect when your algo has stopped working in Part 5.</div>
+        </div>
+      </div>
+
+      <!-- L3 -->
+      <div class="item-entry">
+        <div class="item-head">
+          <span class="item-num">L3</span>
+          <h3 class="item-title">Overfitting Is Real and Seductive</h3>
+        </div>
+        <div class="item-body">
+          <p>Here's how it happens. You build a strategy. Backtest. It loses money. You tweak — change a parameter, add a filter. Still bad. Tweak again. After 50 iterations, you have a strategy that returned 200% over the last five years in backtest. You deploy it. It <em>loses money immediately</em>.</p>
+          <br>
+          <p>What happened: you didn't build a strategy that works. You built a strategy that was <strong>retrofitted to the past</strong>. The 50 iterations weren't discovering a market truth — they were memorizing the specific quirks of the historical data. Run it on new data the model never saw, and there's nothing there.</p>
+          <br>
+          <p>This is the single most common, most expensive mistake in algo trading. Part 4 is mostly about how to avoid it.</p>
+        </div>
+      </div>
+
+      <!-- L4 -->
+      <div class="item-entry">
+        <div class="item-head">
+          <span class="item-num">L4</span>
+          <h3 class="item-title">"Automated" Doesn't Mean "Profitable"</h3>
+        </div>
+        <div class="item-body">
+          <p>There's a strong psychological pull to treat an algo as if its <em>existence</em> is the point. "I have an algorithmic trading system" feels like an accomplishment. But the algo doesn't care. The market doesn't care. The only thing that matters is whether the strategy makes money after costs, after slippage, after everything.</p>
+          <br>
+          <p>A lot of people build an algo and then refuse to turn it off when it's losing money, because turning it off feels like admitting failure. <strong>The algo is a tool.</strong> Tools get used when they work and put down when they don't. The discipline of stopping a losing algo is the same skill as stopping a losing manual trade — and it's just as hard, even though it feels like it shouldn't be.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     WHEN DOES IT MAKE SENSE
+════════════════════════════════════════════ -->
+<div class="section">
+  <div class="container">
+    <span class="section-num">03 — SYNTHESIS</span>
+    <h2 class="section-title">So When Does Algo Trading Make Sense?</h2>
+    <p class="section-lead">Pull the threads together. The right tool for the right job.</p>
+
+    <div class="when-grid">
+      <div class="when-card yes">
+        <div class="when-label yes">Right tool when</div>
+        <ul class="when-list">
+          <li>You have a defined edge — a hypothesis about market behavior you can articulate as rules.</li>
+          <li>You want to apply that edge consistently over time, across multiple instruments, without emotion interfering.</li>
+          <li>You're willing to do the unglamorous work of testing, monitoring, and evolving the strategy as conditions change.</li>
+        </ul>
+      </div>
+      <div class="when-card no">
+        <div class="when-label no">Wrong tool when</div>
+        <ul class="when-list">
+          <li>You don't have a clear edge and you're hoping the technology will create one.</li>
+          <li>You think automation will substitute for the discipline of understanding what you're doing.</li>
+          <li>You want to "set it and forget it." Nothing in trading works that way.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="rule-block">
+      <blockquote>Algos are a tool. They make sense when you have a real edge and the discipline to maintain it.<br>They don't substitute for thinking.</blockquote>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAKEAWAYS + NEXT
+════════════════════════════════════════════ -->
+<div class="section" style="border-bottom:none;">
+  <div class="container">
+    <span class="section-num">04 — SUMMARY</span>
+    <h2 class="section-title">What You Should Now Understand</h2>
+    <p class="section-lead">Four things to carry into Part 3.</p>
+
+    <div class="takeaway-wrap">
+      <div class="takeaway-heading">Key Takeaways — Part 02</div>
+      <ul class="takeaway-list">
+        <li>The <strong>five real advantages</strong>: no emotion, consistency compounds, emotionally flat at scale, full market coverage, and backtestability.</li>
+        <li><strong>Consistency is the multiplier.</strong> Small edges only matter when they are real, repeatable, and applied without interruption. A human breaks the chain; an algo protects it.</li>
+        <li>The <strong>four limits</strong>: algos amplify whatever logic you give them, strategies decay over time, overfitting is the most common failure mode, and "automated" doesn't equal "profitable."</li>
+        <li>Algos are a tool — they make sense when you have a <strong>real edge and the discipline to maintain it</strong>. They don't substitute for thinking.</li>
+      </ul>
+    </div>
+
+    <div class="next-card">
+      <div>
+        <div class="next-label">NEXT — PART 03 / 07</div>
+        <div class="next-title">Anatomy of a Trade<br><span style="font-size:16px;color:var(--text-dim);font-family:'IBM Plex Sans',sans-serif;font-weight:400;">The four things every trade must define, and what makes a strategy out of them.</span></div>
+      </div>
+      <button class="next-btn" onclick="window.location='/learn/algo-track/part-3'">Part 03 →</button>
+    </div>
+  </div>
+</div>
+
+<script src="/review-overlay.js"></script>
+</body>
+</html>

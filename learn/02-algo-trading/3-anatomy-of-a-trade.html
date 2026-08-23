@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part 03 — Anatomy of a Trade and a Strategy | EFG Hermes Algo Track</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0e14;--bg2:#0f1620;--bg3:#141d2b;--card:#111827;--border:#1e2d42;
+  --gold:#c9a84c;--gold-light:#e8c96a;--teal:#2dd4bf;--teal-dim:#0d9488;
+  --red:#f87171;--green:#4ade80;--text:#e2e8f0;--text-dim:#94a3b8;--text-muted:#4a5568;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:15px;line-height:1.7;overflow-x:hidden;}
+
+/* BACK BUTTON */
+.back-btn{position:absolute;top:24px;left:24px;display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--text-muted);text-decoration:none;text-transform:uppercase;border:1px solid var(--border);padding:6px 14px;border-radius:2px;transition:all .2s;z-index:10;}
+.back-btn:hover{border-color:var(--gold);color:var(--gold);}
+.back-btn::before{content:'←';margin-right:2px;}
+
+/* HEADER */
+header{position:relative;padding:60px 0 80px;text-align:center;overflow:hidden;border-bottom:1px solid var(--border);}
+header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(201,168,76,.12) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 80% 50%,rgba(45,212,191,.06) 0%,transparent 60%);}
+.efg-logo{display:inline-flex;align-items:center;gap:10px;margin-bottom:32px;position:relative;}
+.efg-logo-mark{width:36px;height:36px;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:700;color:var(--gold);font-size:14px;letter-spacing:1px;}
+.efg-logo-text{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase;}
+.session-tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--teal);border:1px solid var(--teal-dim);padding:4px 14px;border-radius:2px;margin-bottom:20px;position:relative;}
+h1{font-family:'Playfair Display',serif;font-size:clamp(36px,5vw,64px);font-weight:900;line-height:1.1;position:relative;background:linear-gradient(135deg,#fff 30%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px;}
+.subtitle{color:var(--text-dim);font-size:16px;max-width:520px;margin:0 auto;position:relative;}
+.progress-bar-wrap{display:flex;justify-content:center;gap:6px;margin-top:40px;position:relative;}
+.prog-dot{width:32px;height:4px;border-radius:2px;background:var(--border);}
+.prog-dot.active{background:var(--gold);}
+.prog-dot.current{background:var(--teal);}
+
+/* LAYOUT */
+.container{max-width:960px;margin:0 auto;padding:0 24px;}
+.section{padding:64px 0;border-bottom:1px solid var(--border);}
+.section-num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:3px;margin-bottom:8px;display:block;}
+.section-title{font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:#fff;margin-bottom:8px;}
+.section-lead{color:var(--text-dim);font-size:15px;max-width:560px;margin-bottom:40px;}
+
+/* PROSE */
+.prose{color:var(--text-dim);font-size:15px;line-height:1.8;margin-bottom:32px;max-width:720px;}
+.prose strong{color:#fff;}
+.prose em{color:var(--gold);font-style:normal;}
+
+/* RULE BLOCK — large quoted rule display */
+.rule-block{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:4px;padding:28px 32px;margin-bottom:24px;position:relative;}
+.rule-block blockquote{font-family:'IBM Plex Mono',monospace;font-size:15px;color:#fff;line-height:1.75;font-style:normal;}
+.rule-block blockquote strong{color:var(--gold);}
+
+/* HIGHLIGHT CALLOUT */
+.callout{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:4px;padding:14px 20px;margin-bottom:24px;font-size:13px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;line-height:1.6;}
+.callout strong{color:#fff;}
+
+/* ADVANTAGE GRID */
+.adv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:32px;}
+.adv-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;position:relative;overflow:hidden;transition:border-color .2s,transform .2s;}
+.adv-card:hover{border-color:var(--gold);transform:translateY(-2px);}
+.adv-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent);opacity:0;transition:opacity .2s;}
+.adv-card:hover::before{opacity:1;}
+.adv-card-label{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:10px;}
+.adv-card-body{color:var(--text-dim);font-size:13px;line-height:1.6;}
+
+/* COMPARISON ROW */
+.compare-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px;}
+.compare-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:20px 24px;}
+.compare-label{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;margin-bottom:12px;text-transform:uppercase;}
+.compare-label.algo{color:var(--teal);}
+.compare-label.ai{color:var(--gold);}
+.compare-body{font-size:13px;color:var(--text-dim);line-height:1.65;}
+
+/* SERIES MAP */
+.series-list{list-style:none;padding:0;margin-bottom:32px;}
+.series-item{display:flex;align-items:baseline;gap:16px;padding:14px 0;border-bottom:1px solid var(--border);}
+.series-item:last-child{border-bottom:none;}
+.series-num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:2px;min-width:60px;flex-shrink:0;}
+.series-title{font-size:14px;color:var(--text-dim);line-height:1.5;}
+.series-title strong{color:#fff;}
+.series-item.current .series-num{color:var(--teal);}
+.series-item.current .series-title{color:#fff;}
+
+/* TAKEAWAYS / SUMMARY BLOCK */
+.takeaway-wrap{background:linear-gradient(135deg,rgba(201,168,76,.06),rgba(45,212,191,.04));border:1px solid rgba(201,168,76,.25);border-radius:4px;padding:36px 40px;margin-top:16px;}
+.takeaway-heading{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:20px;}
+.takeaway-list{list-style:none;padding:0;}
+.takeaway-list li{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--border);font-size:14px;color:var(--text-dim);line-height:1.6;}
+.takeaway-list li:last-child{border-bottom:none;}
+.takeaway-list li::before{content:'✓';color:var(--teal);font-family:'IBM Plex Mono',monospace;font-size:12px;flex-shrink:0;margin-top:2px;}
+.takeaway-list li strong{color:#fff;}
+
+/* NEXT CARD */
+.next-card{background:linear-gradient(135deg,rgba(201,168,76,.08),rgba(45,212,191,.05));border:1px solid var(--gold);border-radius:4px;padding:32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;margin-top:40px;}
+.next-label{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;margin-bottom:8px;}
+.next-title{font-family:'Playfair Display',serif;font-size:22px;color:#fff;}
+.next-btn{background:var(--gold);color:#000;border:none;padding:12px 28px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1px;cursor:pointer;border-radius:2px;text-transform:uppercase;font-weight:500;transition:background .15s;}
+.next-btn:hover{background:var(--gold-light);}
+
+/* ── CAROUSEL ── */
+.carousel-section{position:relative;overflow:hidden;background:var(--bg);border-bottom:1px solid var(--border);}
+.carousel-track{display:flex;transition:transform .7s cubic-bezier(.77,0,.18,1);}
+.carousel-slide{min-width:100%;padding:80px 0;position:relative;overflow:hidden;}
+.carousel-slide-bg{position:absolute;inset:0;pointer-events:none;}
+
+.card-1 .carousel-slide-bg{background:radial-gradient(ellipse 70% 80% at 20% 50%,rgba(45,212,191,.07) 0%,transparent 60%);}
+.card-2 .carousel-slide-bg{background:radial-gradient(ellipse 70% 70% at 80% 50%,rgba(201,168,76,.07) 0%,transparent 70%);}
+.card-3 .carousel-slide-bg{background:radial-gradient(ellipse 70% 70% at 50% 50%,rgba(99,102,241,.07) 0%,transparent 70%);}
+.card-4 .carousel-slide-bg{background:radial-gradient(ellipse 80% 60% at 30% 40%,rgba(45,212,191,.07) 0%,transparent 60%);}
+.card-5 .carousel-slide-bg{background:radial-gradient(ellipse 80% 50% at 50% 50%,rgba(201,168,76,.06) 0%,transparent 70%);}
+
+.carousel-inner{max-width:960px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:start;}
+.carousel-text{}
+.card-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--teal);text-transform:uppercase;margin-bottom:16px;}
+.card-headline{font-family:'Playfair Display',serif;font-size:clamp(22px,3vw,36px);font-weight:700;line-height:1.25;color:#fff;margin-bottom:20px;}
+.card-body-text{color:var(--text-dim);font-size:15px;line-height:1.75;}
+.carousel-rule{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:4px;padding:28px 32px;}
+.carousel-rule blockquote{font-family:'IBM Plex Mono',monospace;font-size:14px;color:#fff;line-height:1.8;font-style:normal;}
+.carousel-rule-label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;margin-top:16px;}
+
+/* carousel nav */
+.carousel-nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:24px 0 40px;}
+.c-dot{width:8px;height:8px;border-radius:50%;background:var(--border);cursor:pointer;transition:all .2s;border:none;}
+.c-dot.on{background:var(--gold);transform:scale(1.3);}
+.c-prev,.c-next{background:none;border:1px solid var(--border);color:var(--text-dim);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.c-prev:hover,.c-next:hover{border-color:var(--gold);color:var(--gold);}
+.card-counter{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);min-width:50px;text-align:center;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.section{animation:fadeUp .5s ease both;}
+
+@media(max-width:700px){
+  .carousel-inner{grid-template-columns:1fr;}
+  .compare-row{grid-template-columns:1fr;}
+}
+
+.prose-list{color:var(--text-dim);font-size:14px;line-height:1.7;margin:0 0 28px 20px;max-width:720px;}
+.prose-list li{margin-bottom:8px;}
+.prose-list strong{color:#fff;}
+.subhead{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin:28px 0 10px;}
+.rule-stack{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:24px 0 32px;}
+.rule-mini{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:4px;padding:22px 24px;}
+.rule-mini h3{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:12px;}
+.rule-mini p{font-size:13px;color:var(--text-dim);line-height:1.65;margin-bottom:10px;}
+.rule-mini p:last-child{margin-bottom:0;}
+.rule-mini strong{color:#fff;}
+.example-list{list-style:none;margin:12px 0 0;padding:0;}
+.example-list li{border-bottom:1px solid var(--border);padding:8px 0;color:var(--text-dim);font-size:13px;line-height:1.55;}
+.example-list li:last-child{border-bottom:none;}
+</style>
+</head>
+<body>
+<header>
+  <a class="back-btn" href="/learn/algo-track">Algo Track</a>
+  <div class="container">
+    <div class="efg-logo"><div class="efg-logo-mark">EFG</div><div class="efg-logo-text">Hermes · Algo Track</div></div>
+    <div class="session-tag">PART 03 / 07</div>
+    <h1>Anatomy of a Trade<br>and a Strategy</h1>
+    <p class="subtitle">A 10-minute read on what every trade must define — and what makes a strategy out of trades.</p>
+    <div class="progress-bar-wrap">
+      <div class="prog-dot active"></div><div class="prog-dot active"></div><div class="prog-dot current"></div><div class="prog-dot"></div><div class="prog-dot"></div><div class="prog-dot"></div><div class="prog-dot"></div>
+    </div>
+  </div>
+</header>
+
+<div class="section"><div class="container">
+  <span class="section-num">01 — WHY THIS MATTERS</span>
+  <h2 class="section-title">Why This Part Matters</h2>
+  <p class="section-lead">Part 1 said an algo is a defined set of rules. Part 2 made the case for using them. This part gets specific about what those rules actually are.</p>
+  <p class="prose">There&#x27;s a discipline an algo forces on you that manual trading lets you skip: every trade must be <strong>fully defined</strong> before it happens. No vague intentions, no &quot;I&#x27;ll figure out where to sell when I get there.&quot; If any piece is missing, the algo can&#x27;t execute. That constraint isn&#x27;t a limitation — it&#x27;s the most useful thing about algorithmic thinking, even if you never automate anything.</p>
+</div></div>
+
+<div class="section"><div class="container">
+  <span class="section-num">02 — TRADE ATTRIBUTES</span>
+  <h2 class="section-title">A Trade Has Four Required Attributes</h2>
+  <p class="section-lead">Every trade — every single one, manual or automated — is defined by exactly four things.</p>
+  <div class="rule-stack">
+    <div class="rule-mini"><h3>1. Entry</h3><p ><strong>When do you get in?</strong> At what price, under what conditions, triggered by what signal.</p><p >&quot;Buy CIB at 80&quot; is an entry. So is &quot;Buy CIB when its 20-day moving average crosses above its 50-day moving average.&quot; The form varies. The requirement doesn&#x27;t.</p></div>
+    <div class="rule-mini"><h3>2. Exit / Take-Profit</h3><p ><strong>At what price do you take the win?</strong> Getting out is what determines whether the trade made money.</p><p >&quot;Sell at 90&quot; is an exit. So is &quot;Sell when the price is 12% above entry.&quot;</p></div>
+    <div class="rule-mini"><h3>3. Stop-Loss</h3><p ><strong>At what price do you cut the loss?</strong> The stop-loss isn&#x27;t optional.</p><p >A trade without a defined loss exit is a trade that can take down your account.</p></div>
+    <div class="rule-mini"><h3>4. Duration</h3><p ><strong>How long can the trade live before you&#x27;re out regardless?</strong> Time itself is a signal.</p><p >&quot;Hold for max 30 days&quot; and &quot;exit by Friday close&quot; are duration rules.</p></div>
+  </div>
+</div></div>
+
+<div class="section"><div class="container">
+  <span class="section-num">03 — THE RULE</span>
+  <h2 class="section-title">All Four Are Required</h2>
+  <p class="section-lead">If any one of these four is undefined, it is not a strategy yet — it is an intention.</p>
+  <div class="rule-block"><blockquote>If any one of these four is undefined, <strong>it's not a strategy yet — it's an intention.</strong></blockquote></div>
+  <p class="prose">This is the discipline algos force on you. You can&#x27;t backtest &quot;buy when it looks good.&quot; You can&#x27;t backtest &quot;hold until I feel like selling.&quot; The computer needs all four slots filled with concrete, testable values.</p>
+  <p class="prose">The slots themselves can be <em>dynamic</em>. A trailing stop-loss — one that rises as the trade moves in your favor — is still a defined stop, it just moves. A volatility-adjusted take-profit that scales with how much the stock typically moves is still defined. The shape can be sophisticated. The requirement is that the <em>slot exists</em> and has rules governing it.</p>
+  <p class="prose">If you can&#x27;t articulate all four for any trade you&#x27;re considering, you don&#x27;t have a trade yet. You have a feeling. That distinction will save you a lot of money over time.</p>
+</div></div>
+
+<div class="section"><div class="container">
+  <span class="section-num">04 — AI OVERRIDES</span>
+  <h2 class="section-title">Aside: What if AI Closes a Trade on Breaking News?</h2>
+  <p class="section-lead">AI-driven event overrides are real in live trading, but they are not the rules-based foundation you can backtest.</p>
+  <p class="prose">Yes — in live trading, AI-driven event overrides are real. A system that reads news and closes a position before the stop-loss triggers can absolutely outperform a system that doesn&#x27;t. This is one of the things AI brings to algo trading, and we&#x27;ll cover it in Part 7.</p>
+  <div class="callout">↳ AI overrides are a layer added on top of a rules-based foundation. They are augmentation, not foundation.</div>
+  <p class="prose">These overrides sit <strong>outside</strong> the four backtestable attributes. You can&#x27;t reliably backtest &quot;what would my algo have done if it had read the news,&quot; because you don&#x27;t have granular historical news data, and AI behavior on edge cases is not deterministic.</p>
+</div></div>
+
+<div class="section"><div class="container">
+  <span class="section-num">05 — STRATEGY COMPONENTS</span>
+  <h2 class="section-title">From Trades to Strategies</h2>
+  <p class="section-lead">A trade is a single event with four attributes. A strategy is the system that generates trades.</p>
+  <p class="prose">A <strong>strategy</strong> is the engine that decides when each trade should happen, how big it should be, and how it relates to other trades.</p>
+  <div class="adv-grid">
+    <div class="adv-card"><div class="adv-card-label">Signal</div><div class="adv-card-body"><strong>What condition triggers action?</strong> The signal is the hypothesis: momentum, mean reversion, events, or statistical relationships.</div></div>
+    <div class="adv-card"><div class="adv-card-label">Entry Rule</div><div class="adv-card-body"><strong>Given the signal, when and how do you enter?</strong> Market order, limit order, acceptable price, and how long the entry stays valid.</div></div>
+    <div class="adv-card"><div class="adv-card-label">Exit Rule</div><div class="adv-card-body"><strong>When do you leave?</strong> Profit target, stop-loss, trailing stop, signal reversal, or time-based exit.</div></div>
+    <div class="adv-card"><div class="adv-card-label">Position Sizing</div><div class="adv-card-body"><strong>How much do you commit?</strong> Fixed amount, fixed percentage, volatility-adjusted sizing, or Kelly-style sizing.</div></div>
+  </div>
+  <div class="rule-block"><blockquote>A great signal with bad position sizing can lose money. A mediocre signal with disciplined sizing can make money.</blockquote></div>
+</div></div>
+
+<div class="section"><div class="container">
+  <span class="section-num">06 — WORKED EXAMPLE</span>
+  <h2 class="section-title">Worked Example: A Complete Strategy</h2>
+  <p class="section-lead">The classic 20/50 moving average crossover on EGX stocks.</p>
+  <div class="compare-row">
+    <div class="compare-card"><div class="compare-label algo">Signal</div><div class="compare-body">Universe: EGX stocks with price &gt; EGP 5 and 30-day average daily volume &gt; 100,000 shares. Trigger: 20-day moving average crosses above the 50-day moving average.</div></div>
+    <div class="compare-card"><div class="compare-label ai">Entry Rule</div><div class="compare-body">Buy at the open of the next trading day, using a limit order at the previous day's close. If the limit doesn't fill within 30 minutes, abandon the entry.</div></div>
+  </div>
+  <div class="compare-row">
+    <div class="compare-card"><div class="compare-label algo">Exit Rule</div><div class="compare-body">Take-profit when the 20-day moving average crosses back below the 50-day. Stop-loss 8% below entry, trailing. Max duration: 60 trading days.</div></div>
+    <div class="compare-card"><div class="compare-label ai">Position Sizing</div><div class="compare-body">2% of current portfolio capital per position. Maximum 10 concurrent positions.</div></div>
+  </div>
+  <div class="callout">↳ That is a complete strategy: backtestable, executable, and specific enough that two people coding it should produce nearly identical results.</div>
+</div></div>
+
+<div class="section"><div class="container">
+  <span class="section-num">07 — RISK MANAGEMENT</span>
+  <h2 class="section-title">Aside: Risk and Portfolio Management</h2>
+  <p class="section-lead">Risk management and portfolio management apply to all trading — manual and algorithmic.</p>
+  <ul class="prose-list">
+    <li>Position sizing as a percentage of capital</li>
+    <li>Diversification across uncorrelated positions</li>
+    <li>Drawdown limits — the maximum loss you will tolerate before stopping</li>
+    <li>Exposure caps — the maximum percentage of capital deployed at once</li>
+  </ul>
+  <p class="prose">These are not algo-specific tools. They are trading fundamentals. Beginners often think of them as &quot;advanced&quot; topics for after they figure out entries and exits. They are not. They are the foundation that makes the entries and exits survivable.</p>
+  <p class="prose">An algo does not make risk management more important — it makes it <strong>more visible</strong>. When you code a strategy, you are forced to write the sizing rule explicitly, which means you confront it.</p>
+</div></div>
+
+<div class="section" style="border-bottom:none;"><div class="container">
+  <span class="section-num">08 — SUMMARY</span>
+  <h2 class="section-title">What You Should Now Understand</h2>
+  <p class="section-lead">Six things to take away before moving on.</p>
+  <div class="takeaway-wrap"><div class="takeaway-heading">Key Takeaways — Part 03</div><ul class="takeaway-list">
+    <li>Every trade is fully defined by four attributes: <strong>entry, exit/take-profit, stop-loss, and duration.</strong></li>
+    <li>If any of the four is missing, it is not a strategy — it is an intention.</li>
+    <li>The slots can be dynamic — trailing stops and volatility-adjusted exits count — but they must exist.</li>
+    <li>A strategy is the engine that generates trades, built from four components: <strong>signal, entry rule, exit rule, and position sizing.</strong></li>
+    <li>AI-driven event overrides are real in live trading but live outside the backtestable rule set. They are augmentation, not foundation.</li>
+    <li>Risk and portfolio management apply to all trading. They are foundational, not advanced.</li>
+  </ul></div>
+  <div class="next-card"><div><div class="next-label">NEXT — PART 04 / 07</div><div class="next-title">Backtesting.<br><span style="font-size:16px;color:var(--text-dim);font-family:'IBM Plex Sans',sans-serif;font-weight:400;">How to test on the past, and why the past lies.</span></div></div><button class="next-btn" onclick="window.location='/learn/algo-track/part-4'">Part 04 →</button></div>
+</div></div>
+<script src="/review-overlay.js"></script>
+</body>
+</html>

@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 4 — Reading Charts | EFG Hermes</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
+<style>
+:root {
+  --bg:#0a0e14; --bg2:#0f1620; --bg3:#141d2b; --card:#111827;
+  --border:#1e2d42; --gold:#c9a84c; --gold-light:#e8c96a;
+  --teal:#2dd4bf; --teal-dim:#0d9488; --red:#f87171; --green:#4ade80;
+  --indigo:#818cf8; --orange:#fb923c; --blue:#60a5fa;
+  --text:#e2e8f0; --text-dim:#94a3b8; --text-muted:#4a5568;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:15px;line-height:1.7;overflow-x:hidden;}
+
+/* HEADER */
+header{position:relative;padding:60px 0 80px;text-align:center;overflow:hidden;border-bottom:1px solid var(--border);}
+header::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 70% 60% at 50% -10%,rgba(129,140,248,.1) 0%,transparent 65%),
+             radial-gradient(ellipse 40% 40% at 85% 60%,rgba(45,212,191,.07) 0%,transparent 55%);}
+.efg-logo{display:inline-flex;align-items:center;gap:10px;margin-bottom:28px;position:relative;}
+.efg-logo-mark{width:36px;height:36px;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:700;color:var(--gold);font-size:14px;}
+.efg-logo-text{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase;}
+.session-tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--indigo);border:1px solid rgba(129,140,248,.4);padding:4px 14px;border-radius:2px;margin-bottom:20px;}
+h1{font-family:'Playfair Display',serif;font-size:clamp(36px,5vw,60px);font-weight:900;line-height:1.1;background:linear-gradient(135deg,#fff 20%,var(--indigo) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px;}
+.subtitle{color:var(--text-dim);font-size:16px;max-width:520px;margin:0 auto;}
+.progress-wrap{display:flex;justify-content:center;gap:6px;margin-top:36px;}
+.prog-dot{width:28px;height:3px;border-radius:2px;background:var(--border);}
+.prog-dot.done{background:var(--gold);}
+.prog-dot.current{background:var(--indigo);}
+
+/* STICKY NAV */
+.sticky-nav{position:sticky;top:0;z-index:100;background:rgba(10,14,20,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);}
+.nav-inner{max-width:960px;margin:0 auto;padding:0 24px;display:flex;overflow-x:auto;}
+.nav-item{padding:14px 18px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;color:var(--text-muted);white-space:nowrap;border-bottom:2px solid transparent;transition:all .2s;text-transform:uppercase;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none;}
+.nav-item:hover{color:var(--text);}
+.nav-item.active{color:var(--indigo);border-bottom-color:var(--indigo);}
+
+/* LAYOUT */
+.container{max-width:960px;margin:0 auto;padding:0 24px;}
+.section{padding:72px 0;border-bottom:1px solid var(--border);}
+.section-num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--indigo);letter-spacing:3px;margin-bottom:8px;display:block;}
+.section-title{font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:#fff;margin-bottom:8px;}
+.section-lead{color:var(--text-dim);font-size:15px;max-width:600px;margin-bottom:40px;line-height:1.75;}
+
+/* ASSET CARDS */
+.asset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:32px;}
+.asset-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;position:relative;overflow:hidden;transition:border-color .2s,transform .2s;}
+.asset-card:hover{transform:translateY(-2px);}
+.asset-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;opacity:0;transition:opacity .2s;}
+.asset-card:hover::after{opacity:1;}
+.ac-stocks:hover{border-color:rgba(74,222,128,.5);} .ac-stocks::after{background:var(--green);}
+.ac-bonds:hover{border-color:rgba(201,168,76,.5);} .ac-bonds::after{background:var(--gold);}
+.ac-forex:hover{border-color:rgba(45,212,191,.5);} .ac-forex::after{background:var(--teal);}
+.ac-futures:hover{border-color:rgba(251,146,60,.5);} .ac-futures::after{background:var(--orange);}
+.ac-options:hover{border-color:rgba(129,140,248,.5);} .ac-options::after{background:var(--indigo);}
+.ac-crypto:hover{border-color:rgba(248,113,113,.5);} .ac-crypto::after{background:var(--red);}
+.ac-tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;padding:3px 8px;border-radius:2px;margin-bottom:14px;text-transform:uppercase;}
+.ac-icon{font-size:24px;margin-bottom:12px;display:block;}
+.ac-title{font-weight:600;color:#fff;margin-bottom:8px;font-size:15px;}
+.ac-body{color:var(--text-dim);font-size:13px;line-height:1.65;margin-bottom:14px;}
+.ac-pills{display:flex;gap:8px;flex-wrap:wrap;}
+.ac-pill{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 8px;border-radius:2px;border:1px solid var(--border);color:var(--text-muted);}
+.sum-tag{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 8px;border-radius:2px;}
+.sum-pos{background:rgba(74,222,128,.08);color:var(--green);border:1px solid rgba(74,222,128,.2);}
+.sum-zero{background:rgba(251,146,60,.08);color:var(--orange);border:1px solid rgba(251,146,60,.2);}
+.sum-neg{background:rgba(248,113,113,.08);color:var(--red);border:1px solid rgba(248,113,113,.2);}
+.sum-deb{background:rgba(201,168,76,.08);color:var(--gold);border:1px solid rgba(201,168,76,.2);}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;margin-bottom:24px;}
+table{width:100%;border-collapse:collapse;font-size:14px;}
+th{text-align:left;padding:10px 16px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;color:var(--text-muted);border-bottom:1px solid var(--border);text-transform:uppercase;}
+td{padding:12px 16px;border-bottom:1px solid var(--border);color:var(--text-dim);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,.02);}
+td:first-child{color:#fff;font-weight:500;}
+
+/* CHART WRAP */
+.chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:28px;margin-bottom:24px;}
+.chart-title{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1px;color:var(--text-dim);margin-bottom:4px;text-transform:uppercase;}
+.chart-sub{color:var(--text-muted);font-size:12px;margin-bottom:20px;}
+
+/* INDEX */
+.index-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;}
+.index-box{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;}
+.index-label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:4px;}
+.index-name{font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin-bottom:8px;}
+.index-desc{font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:16px;}
+.index-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.index-chip{font-family:'IBM Plex Mono',monospace;font-size:10px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:2px;padding:3px 8px;color:var(--text-muted);}
+
+/* ETF FLOW */
+.etf-box{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:28px;margin-bottom:24px;}
+.etf-flow{display:flex;align-items:center;flex-wrap:wrap;gap:0;margin-top:20px;}
+.etf-node{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:14px 18px;flex:1;min-width:120px;text-align:center;}
+.etf-node-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+.etf-node-val{font-size:13px;color:#fff;font-weight:500;}
+.etf-arrow{color:var(--indigo);font-size:18px;padding:0 8px;flex-shrink:0;}
+
+/* HOURS */
+.hours-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:12px;}
+.hours-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:18px;}
+.hours-flag{font-size:20px;margin-bottom:8px;}
+.hours-market{font-weight:600;color:#fff;font-size:14px;margin-bottom:3px;}
+.hours-time{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-dim);margin-bottom:4px;}
+.hours-days{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:8px;}
+.htag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 7px;border-radius:2px;}
+.ht-primary{background:rgba(74,222,128,.1);color:var(--green);border:1px solid rgba(74,222,128,.2);}
+.ht-overlap{background:rgba(201,168,76,.1);color:var(--gold);border:1px solid rgba(201,168,76,.2);}
+.ht-after{background:rgba(100,116,139,.1);color:#64748b;border:1px solid rgba(100,116,139,.2);}
+.ht-always{background:rgba(129,140,248,.1);color:var(--indigo);border:1px solid rgba(129,140,248,.2);}
+
+/* INFO DECAY */
+.info-timeline{position:relative;padding:20px 0;}
+.info-type{display:flex;align-items:flex-start;gap:20px;margin-bottom:24px;position:relative;}
+.info-type::before{content:'';position:absolute;left:19px;top:40px;bottom:-24px;width:1px;background:var(--border);}
+.info-type:last-child::before{display:none;}
+.info-dot{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;border:2px solid;}
+.info-body{flex:1;}
+.info-label{font-weight:600;color:#fff;font-size:14px;margin-bottom:4px;}
+.info-speed{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.info-desc{font-size:13px;color:var(--text-dim);line-height:1.65;}
+.info-bar-wrap{margin-top:8px;}
+.info-bar-bg{height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.info-bar-fill{height:100%;border-radius:3px;transition:width .5s;}
+.info-bar-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-muted);margin-top:4px;}
+
+/* RESOURCES */
+.resource-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;}
+.rc{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;text-decoration:none;display:block;transition:border-color .2s,transform .2s;position:relative;overflow:hidden;}
+.rc:hover{transform:translateY(-2px);}
+.rc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:0;transition:opacity .2s;}
+.rc:hover::before{opacity:1;}
+.rc-inv::before,.rc-inv:hover{border-color:rgba(74,222,128,.4);} .rc-inv::before{background:var(--green);}
+.rc-tv::before,.rc-tv:hover{border-color:rgba(45,212,191,.4);} .rc-tv::before{background:var(--teal);}
+.rc-yf::before,.rc-yf:hover{border-color:rgba(201,168,76,.4);} .rc-yf::before{background:var(--gold);}
+.rc-dam::before,.rc-dam:hover{border-color:rgba(251,146,60,.4);} .rc-dam::before{background:var(--orange);}
+.rc-icon{font-size:26px;margin-bottom:12px;display:block;}
+.rc-name{font-weight:600;color:#fff;margin-bottom:3px;font-size:15px;}
+.rc-type{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;}
+.rc-body{font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:12px;}
+.rc-url{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);}
+.rc-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;}
+.rc-tag{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 7px;border-radius:2px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text-muted);}
+
+/* NEXT */
+.next-card{background:linear-gradient(135deg,rgba(129,140,248,.08),rgba(45,212,191,.05));border:1px solid var(--indigo);border-radius:4px;padding:32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;margin-top:40px;}
+.next-label{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--indigo);letter-spacing:2px;margin-bottom:8px;}
+.next-title{font-family:'Playfair Display',serif;font-size:22px;color:#fff;}
+.next-btn{background:var(--indigo);color:#fff;border:none;padding:12px 28px;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1px;cursor:pointer;border-radius:2px;text-transform:uppercase;transition:background .15s;}
+.next-btn:hover{background:#a5b4fc;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.section{animation:fadeUp .5s ease both;}
+@media(max-width:680px){.index-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="container">
+    <div class="efg-logo">
+      <div class="efg-logo-mark">EFG</div>
+      <div class="efg-logo-text">Hermes · Stock Market Series</div>
+    </div>
+    <div class="session-tag">SESSION 04 / 05</div>
+    <h1>Reading<br>Charts</h1>
+    <p class="subtitle">The technical-analysis lens — how traders read price action, identify trends, and recognise patterns. What charts can tell you, and what they can't.</p>
+    <div class="progress-wrap">
+      <div class="prog-dot done"></div>
+      <div class="prog-dot done"></div>
+      <div class="prog-dot done"></div>
+      <div class="prog-dot current"></div>
+      <div class="prog-dot"></div>
+    </div>
+  </div>
+</header>
+
+<!-- STICKY NAV -->
+<nav class="sticky-nav">
+  <div class="nav-inner">
+    <button class="nav-item" onclick="goTo('s1')">01 Candlesticks</button>
+    <button class="nav-item" onclick="goTo('s2')">02 Trends & Levels</button>
+    <button class="nav-item" onclick="goTo('s3')">03 Indicators</button>
+    <button class="nav-item" onclick="goTo('s4')">04 Chart Patterns</button>
+    <button class="nav-item" onclick="goTo('s5')">05 Limits of TA</button>
+  </div>
+</nav>
+
+<!-- ══ 01 CANDLESTICKS ══ -->
+<div class="section" id="s1">
+  <div class="container">
+    <span class="section-num">01 — CANDLESTICKS</span>
+    <h2 class="section-title">How to Read a Single Candle</h2>
+    <p class="section-lead">A candlestick is the densest piece of information in finance. In one shape, you can see a day's worth of price action — where it opened, where it closed, the highest and lowest points it touched, and whether buyers or sellers won. Once you can read one candle, you can read a chart.</p>
+
+    <!-- Candle anatomy SVG -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:32px;margin-bottom:24px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:24px;">↳ Anatomy of a candle</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;">
+
+        <!-- bullish candle -->
+        <div style="display:flex;justify-content:center;">
+          <svg viewBox="0 0 280 320" style="width:100%;max-width:240px;overflow:visible;">
+            <!-- upper wick -->
+            <line x1="140" y1="20" x2="140" y2="80" stroke="#4ade80" stroke-width="2"/>
+            <!-- body -->
+            <rect x="100" y="80" width="80" height="160" fill="#4ade80" stroke="#22c55e" stroke-width="1"/>
+            <!-- lower wick -->
+            <line x1="140" y1="240" x2="140" y2="300" stroke="#4ade80" stroke-width="2"/>
+            <!-- labels -->
+            <line x1="180" y1="20" x2="220" y2="20" stroke="#4a5568" stroke-width="1"/>
+            <text x="226" y="24" fill="#94a3b8" font-size="11" font-family="IBM Plex Mono">HIGH</text>
+            <line x1="180" y1="80" x2="220" y2="80" stroke="#4a5568" stroke-width="1"/>
+            <text x="226" y="84" fill="#94a3b8" font-size="11" font-family="IBM Plex Mono">CLOSE</text>
+            <line x1="180" y1="240" x2="220" y2="240" stroke="#4a5568" stroke-width="1"/>
+            <text x="226" y="244" fill="#94a3b8" font-size="11" font-family="IBM Plex Mono">OPEN</text>
+            <line x1="180" y1="300" x2="220" y2="300" stroke="#4a5568" stroke-width="1"/>
+            <text x="226" y="304" fill="#94a3b8" font-size="11" font-family="IBM Plex Mono">LOW</text>
+            <!-- left side annotations -->
+            <text x="60" y="60" fill="#4a5568" font-size="10" font-family="IBM Plex Mono" text-anchor="end">UPPER</text>
+            <text x="60" y="74" fill="#4a5568" font-size="10" font-family="IBM Plex Mono" text-anchor="end">WICK</text>
+            <text x="60" y="160" fill="#4a5568" font-size="10" font-family="IBM Plex Mono" text-anchor="end">BODY</text>
+            <text x="60" y="270" fill="#4a5568" font-size="10" font-family="IBM Plex Mono" text-anchor="end">LOWER</text>
+            <text x="60" y="284" fill="#4a5568" font-size="10" font-family="IBM Plex Mono" text-anchor="end">WICK</text>
+          </svg>
+        </div>
+
+        <!-- bearish candle -->
+        <div style="display:flex;justify-content:center;">
+          <svg viewBox="0 0 280 320" style="width:100%;max-width:240px;overflow:visible;">
+            <line x1="140" y1="20" x2="140" y2="60" stroke="#f87171" stroke-width="2"/>
+            <rect x="100" y="60" width="80" height="180" fill="#f87171" stroke="#ef4444" stroke-width="1"/>
+            <line x1="140" y1="240" x2="140" y2="300" stroke="#f87171" stroke-width="2"/>
+            <line x1="180" y1="20" x2="220" y2="20" stroke="#4a5568" stroke-width="1"/>
+            <text x="226" y="24" fill="#94a3b8" font-size="11" font-family="IBM Plex Mono">HIGH</text>
+            <line x1="180" y1="60" x2="220" y2="60" stroke="#4a5568" stroke-width="1"/>
+            <text x="226" y="64" fill="#94a3b8" font-size="11" font-family="IBM Plex Mono">OPEN</text>
+            <line x1="180" y1="240" x2="220" y2="240" stroke="#4a5568" stroke-width="1"/>
+            <text x="226" y="244" fill="#94a3b8" font-size="11" font-family="IBM Plex Mono">CLOSE</text>
+            <line x1="180" y1="300" x2="220" y2="300" stroke="#4a5568" stroke-width="1"/>
+            <text x="226" y="304" fill="#94a3b8" font-size="11" font-family="IBM Plex Mono">LOW</text>
+          </svg>
+        </div>
+
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:18px;">
+        <div style="text-align:center;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--green);letter-spacing:2px;">BULLISH (GREEN)</div>
+          <div style="font-size:13px;color:var(--text-dim);margin-top:6px;">Close higher than open. Buyers won.</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--red);letter-spacing:2px;">BEARISH (RED)</div>
+          <div style="font-size:13px;color:var(--text-dim);margin-top:6px;">Close lower than open. Sellers won.</div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin-bottom:14px;">Candles tell stories</h3>
+    <p style="color:var(--text-dim);font-size:14px;line-height:1.75;margin-bottom:24px;max-width:680px;">The shape of a candle reflects what happened during the period. A long body means a strong, decisive move. Long wicks mean the price went somewhere — but came back. The combination tells you who was in control and who got rejected. Here are four candles every trader recognises:</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;">
+
+      <!-- Doji -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:18px;text-align:center;">
+        <svg viewBox="0 0 100 140" style="width:60px;height:90px;margin-bottom:10px;">
+          <line x1="50" y1="10" x2="50" y2="60" stroke="#94a3b8" stroke-width="2"/>
+          <line x1="35" y1="65" x2="65" y2="65" stroke="#94a3b8" stroke-width="3"/>
+          <line x1="50" y1="70" x2="50" y2="130" stroke="#94a3b8" stroke-width="2"/>
+        </svg>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;margin-bottom:6px;">DOJI</div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.55;">Open ≈ Close. The market couldn't decide. Often a turning point — indecision before a move.</div>
+      </div>
+
+      <!-- Hammer -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:18px;text-align:center;">
+        <svg viewBox="0 0 100 140" style="width:60px;height:90px;margin-bottom:10px;">
+          <line x1="50" y1="20" x2="50" y2="35" stroke="#4ade80" stroke-width="2"/>
+          <rect x="35" y="35" width="30" height="25" fill="#4ade80"/>
+          <line x1="50" y1="60" x2="50" y2="130" stroke="#4ade80" stroke-width="2"/>
+        </svg>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">HAMMER</div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.55;">Sellers pushed price way down, then buyers pushed it all the way back up. Bullish reversal signal at bottoms.</div>
+      </div>
+
+      <!-- Shooting star -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:18px;text-align:center;">
+        <svg viewBox="0 0 100 140" style="width:60px;height:90px;margin-bottom:10px;">
+          <line x1="50" y1="10" x2="50" y2="80" stroke="#f87171" stroke-width="2"/>
+          <rect x="35" y="80" width="30" height="25" fill="#f87171"/>
+          <line x1="50" y1="105" x2="50" y2="120" stroke="#f87171" stroke-width="2"/>
+        </svg>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--red);letter-spacing:2px;margin-bottom:6px;">SHOOTING STAR</div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.55;">Buyers pushed price way up, then sellers pushed it all the way back. Bearish reversal signal at tops.</div>
+      </div>
+
+      <!-- Engulfing -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:18px;text-align:center;">
+        <svg viewBox="0 0 140 140" style="width:90px;height:90px;margin-bottom:10px;">
+          <line x1="40" y1="50" x2="40" y2="60" stroke="#f87171" stroke-width="2"/>
+          <rect x="28" y="60" width="24" height="30" fill="#f87171"/>
+          <line x1="40" y1="90" x2="40" y2="100" stroke="#f87171" stroke-width="2"/>
+          <line x1="100" y1="30" x2="100" y2="45" stroke="#4ade80" stroke-width="2"/>
+          <rect x="80" y="45" width="40" height="60" fill="#4ade80"/>
+          <line x1="100" y1="105" x2="100" y2="120" stroke="#4ade80" stroke-width="2"/>
+        </svg>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">BULLISH ENGULFING</div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.55;">A green candle that completely "engulfs" the previous red one. Buyers took over decisively. Strong reversal signal.</div>
+      </div>
+
+    </div>
+
+    <div style="background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.2);border-radius:4px;padding:18px 22px;margin-top:24px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">↳ Honest caveat</div>
+      <div style="font-size:13px;color:var(--text-dim);line-height:1.7;">A single candle is one data point — context matters more than the shape. A hammer at the top of an uptrend means almost nothing. A hammer after a long downtrend, near a support level, on high volume — that's worth paying attention to. Candles by themselves are noise. Candles in context are signal.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 02 TRENDS & LEVELS ══ -->
+<div class="section" id="s2">
+  <div class="container">
+    <span class="section-num">02 — TRENDS, SUPPORT & RESISTANCE</span>
+    <h2 class="section-title">The Two Most Useful Concepts in TA</h2>
+    <p class="section-lead">If you only ever learn two things from technical analysis, learn these. Trends tell you which direction the market is moving. Support and resistance tell you where it's likely to pause, bounce, or break. Together, they're the entire foundation of price-based trading.</p>
+
+    <h3 style="font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin-bottom:10px;">Trends — three states only</h3>
+    <p style="color:var(--text-dim);font-size:14px;line-height:1.75;margin-bottom:20px;max-width:680px;">A market is always in one of three states. Sounds obvious — but most retail mistakes come from trading against the trend, or pretending one exists when the market is actually flat.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:32px;">
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:18px;">
+        <svg viewBox="0 0 200 80" style="width:100%;height:60px;margin-bottom:10px;">
+          <polyline points="10,65 35,55 60,60 90,40 115,45 145,25 175,30 195,15" fill="none" stroke="#4ade80" stroke-width="2"/>
+          <circle cx="35" cy="55" r="3" fill="#4ade80"/><circle cx="90" cy="40" r="3" fill="#4ade80"/><circle cx="145" cy="25" r="3" fill="#4ade80"/>
+        </svg>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">UPTREND</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.6;">Higher highs and higher lows. Each pullback bottoms higher than the last. Buyers are in control.</div>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:18px;">
+        <svg viewBox="0 0 200 80" style="width:100%;height:60px;margin-bottom:10px;">
+          <polyline points="10,15 35,25 60,20 90,40 115,35 145,55 175,50 195,65" fill="none" stroke="#f87171" stroke-width="2"/>
+          <circle cx="35" cy="25" r="3" fill="#f87171"/><circle cx="90" cy="40" r="3" fill="#f87171"/><circle cx="145" cy="55" r="3" fill="#f87171"/>
+        </svg>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--red);letter-spacing:2px;margin-bottom:6px;">DOWNTREND</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.6;">Lower highs and lower lows. Each rally peaks lower than the last. Sellers are in control.</div>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:18px;">
+        <svg viewBox="0 0 200 80" style="width:100%;height:60px;margin-bottom:10px;">
+          <polyline points="10,40 35,25 60,55 90,30 115,50 145,28 175,52 195,35" fill="none" stroke="#94a3b8" stroke-width="2"/>
+          <line x1="10" y1="28" x2="195" y2="28" stroke="#4a5568" stroke-width="1" stroke-dasharray="3,3"/>
+          <line x1="10" y1="55" x2="195" y2="55" stroke="#4a5568" stroke-width="1" stroke-dasharray="3,3"/>
+        </svg>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);letter-spacing:2px;margin-bottom:6px;">SIDEWAYS / RANGE</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.6;">Price oscillates between a ceiling and a floor. Neither side is winning. Most markets are sideways most of the time.</div>
+      </div>
+
+    </div>
+
+    <h3 style="font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin-bottom:10px;">Support & Resistance</h3>
+    <p style="color:var(--text-dim);font-size:14px;line-height:1.75;margin-bottom:20px;max-width:680px;">Price has memory. When a stock has bounced off the same level three times, traders watching the chart remember — and they place orders there next time. That collective memory <em>creates</em> the level. Self-fulfilling, but real.</p>
+
+    <!-- S/R diagram -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;margin-bottom:24px;">
+      <svg viewBox="0 0 600 240" style="width:100%;height:auto;display:block;">
+        <!-- price line -->
+        <polyline points="20,180 60,150 90,170 130,120 170,140 210,90 250,110 290,90 330,110 370,90 410,150 450,170 490,140 530,170 570,180" fill="none" stroke="#c9a84c" stroke-width="2"/>
+        <!-- resistance -->
+        <line x1="10" y1="90" x2="590" y2="90" stroke="#f87171" stroke-width="1.5" stroke-dasharray="6,4"/>
+        <text x="500" y="84" fill="#f87171" font-size="11" font-family="IBM Plex Mono">RESISTANCE</text>
+        <!-- support -->
+        <line x1="10" y1="180" x2="590" y2="180" stroke="#4ade80" stroke-width="1.5" stroke-dasharray="6,4"/>
+        <text x="500" y="200" fill="#4ade80" font-size="11" font-family="IBM Plex Mono">SUPPORT</text>
+        <!-- annotation dots at the touches -->
+        <circle cx="210" cy="90" r="4" fill="#f87171"/>
+        <circle cx="290" cy="90" r="4" fill="#f87171"/>
+        <circle cx="370" cy="90" r="4" fill="#f87171"/>
+        <circle cx="20" cy="180" r="4" fill="#4ade80"/>
+        <circle cx="450" cy="170" r="4" fill="#4ade80"/>
+        <circle cx="530" cy="170" r="4" fill="#4ade80"/>
+      </svg>
+      <div style="font-size:12px;color:var(--text-muted);text-align:center;margin-top:14px;font-family:'IBM Plex Mono',monospace;">PRICE BOUNCES OFF SUPPORT (FLOOR) AND RESISTANCE (CEILING) MULTIPLE TIMES</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:20px;border-left:3px solid var(--green);">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--green);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Support</div>
+        <div style="color:#fff;font-weight:500;font-size:15px;margin-bottom:8px;">A floor under price</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.65;">A price level where buyers historically step in. The more times price bounces off it, the stronger it gets. When support breaks, it often becomes the new resistance — what was a floor becomes a ceiling.</div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:20px;border-left:3px solid var(--red);">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--red);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Resistance</div>
+        <div style="color:#fff;font-weight:500;font-size:15px;margin-bottom:8px;">A ceiling above price</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.65;">A price level where sellers historically step in. Often round numbers (50 EGP, 100 EGP) or recent highs. When resistance breaks, it often becomes the new support — old ceiling becomes the new floor.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 03 INDICATORS ══ -->
+<div class="section" id="s3">
+  <div class="container">
+    <span class="section-num">03 — INDICATORS</span>
+    <h2 class="section-title">The Three Indicators Every Trader Knows</h2>
+    <p class="section-lead">Indicators are mathematical formulas applied to price to highlight things the eye might miss. There are hundreds. Most are variations on each other. These three — Moving Averages, RSI, and MACD — cover 80% of what retail traders actually use. Important caveat upfront: <strong style="color:#fff;">indicators lag the market.</strong> They tell you what already happened, not what will happen.</p>
+
+    <!-- MOVING AVERAGE -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;margin-bottom:18px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;background:rgba(201,168,76,.1);padding:4px 10px;border-radius:2px;">INDICATOR 01</div>
+        <h3 style="font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin:0;">Moving Averages (MA)</h3>
+      </div>
+      <p style="font-size:14px;color:var(--text-dim);line-height:1.7;margin-bottom:16px;">The average closing price over the last N days. Smooths out daily noise to reveal the underlying trend. The two most-watched: <strong style="color:#fff;">50-day MA</strong> (medium-term trend) and <strong style="color:#fff;">200-day MA</strong> (long-term trend).</p>
+
+      <canvas id="maChart" style="max-height:200px;width:100%;"></canvas>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:18px;">
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.6;"><strong style="color:#fff;display:block;">Above the 200-MA</strong>Generally considered a bull market for that stock.</div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.6;"><strong style="color:#fff;display:block;">Golden Cross</strong>50-MA crosses above 200-MA. Classic bullish signal.</div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.6;"><strong style="color:#fff;display:block;">Death Cross</strong>50-MA crosses below 200-MA. Classic bearish signal.</div>
+      </div>
+    </div>
+
+    <!-- RSI -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;margin-bottom:18px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--teal);letter-spacing:2px;background:rgba(45,212,191,.1);padding:4px 10px;border-radius:2px;">INDICATOR 02</div>
+        <h3 style="font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin:0;">RSI — Relative Strength Index</h3>
+      </div>
+      <p style="font-size:14px;color:var(--text-dim);line-height:1.7;margin-bottom:16px;">A 0–100 score that asks: has this stock been gaining or losing recently, and how aggressively? Above <strong style="color:#fff;">70</strong> means "overbought" — the rally may be exhausted. Below <strong style="color:#fff;">30</strong> means "oversold" — the selling may have gone too far.</p>
+
+      <canvas id="rsiChart" style="max-height:160px;width:100%;"></canvas>
+
+      <div style="font-size:12px;color:var(--text-muted);margin-top:14px;line-height:1.6;">RSI is most useful at extremes. A stock at RSI 75 in a strong uptrend can stay overbought for weeks — selling on RSI alone is a common rookie mistake.</div>
+    </div>
+
+    <!-- MACD -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--indigo);letter-spacing:2px;background:rgba(129,140,248,.1);padding:4px 10px;border-radius:2px;">INDICATOR 03</div>
+        <h3 style="font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin:0;">MACD — Moving Average Convergence Divergence</h3>
+      </div>
+      <p style="font-size:14px;color:var(--text-dim);line-height:1.7;margin-bottom:8px;">A momentum indicator. It compares two moving averages (typically 12-day and 26-day) and shows whether they're converging or diverging. When the lines cross, it's a signal that momentum is shifting.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.6;"><strong style="color:var(--green);display:block;margin-bottom:4px;">Bullish crossover</strong>The faster MA crosses <em>above</em> the slower MA. Often used as a buy signal.</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.6;"><strong style="color:var(--red);display:block;margin-bottom:4px;">Bearish crossover</strong>The faster MA crosses <em>below</em> the slower MA. Often used as a sell signal.</div>
+      </div>
+    </div>
+
+    <div style="background:rgba(248,113,113,.05);border:1px solid rgba(248,113,113,.2);border-radius:4px;padding:18px 22px;margin-top:24px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--red);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">↳ Don't get indicator-pilled</div>
+      <div style="font-size:13px;color:var(--text-dim);line-height:1.7;">New traders often add 8 indicators to a single chart, hoping more is better. It's not — they're mostly measuring the same thing. Pick two or three, learn what they actually mean, and trust the chart's price action above any indicator. <strong style="color:#fff;">Indicators don't predict — they describe.</strong></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 04 CHART PATTERNS ══ -->
+<div class="section" id="s4">
+  <div class="container">
+    <span class="section-num">04 — CHART PATTERNS</span>
+    <h2 class="section-title">Shapes That Traders Watch For</h2>
+    <p class="section-lead">Certain chart shapes appear so often that they have names and reputations. Some traders swear by them. Others think they're glorified pareidolia — finding faces in clouds. The truth is probably in between: patterns work partly because they capture real market psychology, and partly because enough people watch them that they become self-fulfilling.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-bottom:24px;">
+
+      <!-- Head and Shoulders -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:20px;">
+        <svg viewBox="0 0 240 120" style="width:100%;height:auto;margin-bottom:12px;">
+          <polyline points="10,90 40,70 60,90 90,40 120,60 150,30 180,60 210,80 230,90" fill="none" stroke="#f87171" stroke-width="2"/>
+          <line x1="10" y1="80" x2="230" y2="80" stroke="#4a5568" stroke-width="1" stroke-dasharray="3,3"/>
+          <text x="115" y="95" fill="#4a5568" font-size="9" font-family="IBM Plex Mono" text-anchor="middle">NECKLINE</text>
+          <text x="60" y="65" fill="#94a3b8" font-size="9" font-family="IBM Plex Mono" text-anchor="middle">L SHOULDER</text>
+          <text x="150" y="22" fill="#94a3b8" font-size="9" font-family="IBM Plex Mono" text-anchor="middle">HEAD</text>
+          <text x="180" y="55" fill="#94a3b8" font-size="9" font-family="IBM Plex Mono" text-anchor="middle">R SHOULDER</text>
+        </svg>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--red);letter-spacing:2px;margin-bottom:6px;">HEAD & SHOULDERS</div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">Three peaks, the middle one highest. Considered one of the most reliable bearish reversal patterns. When price breaks below the "neckline," it often signals the end of the uptrend.</div>
+      </div>
+
+      <!-- Double Top -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:20px;">
+        <svg viewBox="0 0 240 120" style="width:100%;height:auto;margin-bottom:12px;">
+          <polyline points="10,90 50,40 90,75 130,40 170,75 210,95" fill="none" stroke="#f87171" stroke-width="2"/>
+          <circle cx="50" cy="40" r="4" fill="#f87171"/>
+          <circle cx="130" cy="40" r="4" fill="#f87171"/>
+          <line x1="10" y1="40" x2="230" y2="40" stroke="#f87171" stroke-width="1" stroke-dasharray="3,3" opacity="0.4"/>
+        </svg>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--red);letter-spacing:2px;margin-bottom:6px;">DOUBLE TOP (M)</div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">Price hits the same high twice and fails to break through. Buyers gave up. Bearish reversal — often signals a meaningful top.</div>
+      </div>
+
+      <!-- Double Bottom -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:20px;">
+        <svg viewBox="0 0 240 120" style="width:100%;height:auto;margin-bottom:12px;">
+          <polyline points="10,30 50,80 90,45 130,80 170,45 210,25" fill="none" stroke="#4ade80" stroke-width="2"/>
+          <circle cx="50" cy="80" r="4" fill="#4ade80"/>
+          <circle cx="130" cy="80" r="4" fill="#4ade80"/>
+          <line x1="10" y1="80" x2="230" y2="80" stroke="#4ade80" stroke-width="1" stroke-dasharray="3,3" opacity="0.4"/>
+        </svg>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">DOUBLE BOTTOM (W)</div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">Price hits the same low twice and bounces. Sellers gave up. Bullish reversal — often signals a meaningful bottom.</div>
+      </div>
+
+      <!-- Ascending Triangle -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:20px;">
+        <svg viewBox="0 0 240 120" style="width:100%;height:auto;margin-bottom:12px;">
+          <polyline points="10,90 40,40 70,75 100,40 130,65 160,40 190,55 215,40" fill="none" stroke="#94a3b8" stroke-width="2"/>
+          <line x1="10" y1="40" x2="230" y2="40" stroke="#f87171" stroke-width="1" stroke-dasharray="3,3"/>
+          <line x1="10" y1="100" x2="215" y2="40" stroke="#4ade80" stroke-width="1" stroke-dasharray="3,3"/>
+        </svg>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">ASCENDING TRIANGLE</div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">Higher lows pressing up against a flat resistance. Buyers getting more aggressive. Often resolves with an upward breakout.</div>
+      </div>
+
+      <!-- Descending Triangle -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:20px;">
+        <svg viewBox="0 0 240 120" style="width:100%;height:auto;margin-bottom:12px;">
+          <polyline points="10,30 40,80 70,45 100,80 130,55 160,80 190,65 215,80" fill="none" stroke="#94a3b8" stroke-width="2"/>
+          <line x1="10" y1="80" x2="230" y2="80" stroke="#4ade80" stroke-width="1" stroke-dasharray="3,3"/>
+          <line x1="10" y1="20" x2="215" y2="80" stroke="#f87171" stroke-width="1" stroke-dasharray="3,3"/>
+        </svg>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--red);letter-spacing:2px;margin-bottom:6px;">DESCENDING TRIANGLE</div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">Lower highs pressing down against a flat support. Sellers getting more aggressive. Often resolves with a downward breakdown.</div>
+      </div>
+
+      <!-- Flag -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:20px;">
+        <svg viewBox="0 0 240 120" style="width:100%;height:auto;margin-bottom:12px;">
+          <polyline points="10,100 50,40 80,55 110,45 140,60 170,50 200,15" fill="none" stroke="#4ade80" stroke-width="2"/>
+          <line x1="80" y1="50" x2="170" y2="40" stroke="#4a5568" stroke-width="1" stroke-dasharray="3,3"/>
+          <line x1="80" y1="65" x2="170" y2="55" stroke="#4a5568" stroke-width="1" stroke-dasharray="3,3"/>
+        </svg>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--green);letter-spacing:2px;margin-bottom:6px;">BULL FLAG</div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">A sharp rally followed by a small downward channel — like a flag on a flagpole. Usually a continuation pattern: the trend resumes after a brief pause.</div>
+      </div>
+
+    </div>
+
+    <div style="background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.2);border-radius:4px;padding:18px 22px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">↳ Pattern recognition trap</div>
+      <div style="font-size:13px;color:var(--text-dim);line-height:1.7;">The human eye is built to find patterns — even where none exist. Once you learn what a head-and-shoulders looks like, you'll see them everywhere. The real test is statistical: do these patterns produce reliable returns out-of-sample, after costs? Academic studies are mixed at best. Treat patterns as one piece of evidence, not as predictions.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 05 LIMITS OF TA ══ -->
+<div class="section" id="s5">
+  <div class="container">
+    <span class="section-num">05 — THE LIMITS OF TA</span>
+    <h2 class="section-title">What Charts Can and Can't Tell You</h2>
+    <p class="section-lead">Technical analysis has fierce believers and fierce skeptics — both with valid points. The honest position is that TA is a useful lens for some things and useless for others. Understanding the line between them is what separates a thoughtful trader from a chart-worshipper.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;">
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;border-top:3px solid var(--green);">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--green);letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">What charts are good for</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.7;margin-bottom:10px;"><strong style="color:#fff;display:block;margin-bottom:2px;">Identifying the trend</strong>The simplest, highest-value use. Are buyers or sellers in control right now?</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.7;margin-bottom:10px;"><strong style="color:#fff;display:block;margin-bottom:2px;">Defining risk</strong>Charts give you objective levels (recent lows, support zones) where you know your idea is wrong. That's how you set stops.</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.7;margin-bottom:10px;"><strong style="color:#fff;display:block;margin-bottom:2px;">Timing entries</strong>Even if you decided to buy a stock based on fundamentals, the chart can tell you whether to buy now or wait for a pullback.</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.7;"><strong style="color:#fff;display:block;margin-bottom:2px;">Reading sentiment</strong>Volume spikes, gaps, climactic candles — these tell you when fear or euphoria is peaking.</div>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;border-top:3px solid var(--red);">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--red);letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">What charts can't do</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.7;margin-bottom:10px;"><strong style="color:#fff;display:block;margin-bottom:2px;">Predict news</strong>An earnings miss, a regulatory change, a CEO scandal — these aren't on the chart until after they hit.</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.7;margin-bottom:10px;"><strong style="color:#fff;display:block;margin-bottom:2px;">Tell you what's expensive</strong>A chart can't tell you a company's earnings or assets. A stock at all-time highs might still be undervalued; one at all-time lows might be a value trap.</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.7;margin-bottom:10px;"><strong style="color:#fff;display:block;margin-bottom:2px;">Work in choppy markets</strong>Most TA assumes there's a trend to ride. In sideways or noisy markets, indicators flip-flop and patterns fail constantly.</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.7;"><strong style="color:#fff;display:block;margin-bottom:2px;">Eliminate emotion</strong>The chart looks objective, but you're still making subjective calls. Confirmation bias survives any indicator.</div>
+      </div>
+
+    </div>
+
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;margin-bottom:24px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">↳ Why TA works (when it works)</div>
+      <div style="font-size:14px;color:var(--text-dim);line-height:1.75;">TA isn't magic. When it works, it works for two reasons. <strong style="color:#fff;">First — self-fulfilling prophecy.</strong> If enough traders watch the 200-day moving average, they'll buy when price approaches it from above. That collective behaviour is what makes the level "support." <strong style="color:#fff;">Second — behavioural patterns.</strong> Markets are made of humans, and humans react predictably to the same emotional triggers. Fear at the bottom, greed at the top. Charts capture the footprint of those reactions. When TA fails, it's usually because something exogenous (news, regulation, macro shock) overwhelms the patterns. The patterns don't disappear — they just stop dominating.</div>
+    </div>
+
+    <div style="background:rgba(45,212,191,.05);border:1px solid rgba(45,212,191,.2);border-radius:4px;padding:24px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--teal);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">↳ The honest takeaway</div>
+      <div style="font-size:14px;color:var(--text-dim);line-height:1.75;">TA is a lens, not a crystal ball. The best traders use it alongside fundamentals (the lens we cover in Session 5), risk management, and humility about what they don't know. A chart pattern by itself is not a reason to trade. A chart pattern <em>plus</em> a thesis, a defined risk, and the willingness to be wrong — that's a setup. The next session covers the other half of the equation: how to read the company behind the ticker.</div>
+    </div>
+  </div>
+</div>
+
+<!-- NEXT -->
+
+
+<script>
+// NAV
+function goTo(id){document.getElementById(id).scrollIntoView({behavior:'smooth',block:'start'});}
+const sids=['s1','s2','s3','s4','s5'];
+const nitems=document.querySelectorAll('.nav-item');
+window.addEventListener('scroll',()=>{
+  let cur='';
+  sids.forEach(id=>{const el=document.getElementById(id);if(el&&el.getBoundingClientRect().top<140)cur=id;});
+  nitems.forEach((n,i)=>n.classList.toggle('active',sids[i]===cur));
+});
+
+Chart.defaults.color='#64748b';
+Chart.defaults.borderColor='#1e2d42';
+
+// ── MOVING AVERAGE CHART ──
+(function(){
+  const N = 80;
+  const labels = Array.from({length:N},(_,i)=>'D'+(i+1));
+  // generate price with a clear uptrend and noise
+  const price = [];
+  let p = 50;
+  for(let i=0;i<N;i++){
+    p += (Math.random()-0.42)*1.8;
+    price.push(parseFloat(p.toFixed(2)));
+  }
+  // 20-day MA
+  const ma20 = price.map((_,i)=>{
+    if(i<19) return null;
+    const slice = price.slice(i-19,i+1);
+    return parseFloat((slice.reduce((a,b)=>a+b,0)/20).toFixed(2));
+  });
+  // 50-day MA
+  const ma50 = price.map((_,i)=>{
+    if(i<49) return null;
+    const slice = price.slice(i-49,i+1);
+    return parseFloat((slice.reduce((a,b)=>a+b,0)/50).toFixed(2));
+  });
+  new Chart(document.getElementById('maChart'),{
+    type:'line',
+    data:{labels:labels,datasets:[
+      {label:'Price',data:price,borderColor:'#c9a84c',backgroundColor:'rgba(201,168,76,0.05)',borderWidth:1.5,pointRadius:0,fill:true,tension:0.2},
+      {label:'20-day MA',data:ma20,borderColor:'#2dd4bf',borderWidth:2,pointRadius:0,tension:0.3},
+      {label:'50-day MA',data:ma50,borderColor:'#818cf8',borderWidth:2,pointRadius:0,tension:0.3,borderDash:[4,3]}
+    ]},
+    options:{responsive:true,
+      plugins:{legend:{labels:{color:'#94a3b8',font:{family:'IBM Plex Mono',size:11},boxWidth:14}},
+      tooltip:{backgroundColor:'#111827',titleColor:'#fff',bodyColor:'#94a3b8'}},
+      scales:{x:{grid:{display:false},ticks:{maxTicksLimit:8,color:'#4a5568',font:{family:'IBM Plex Mono',size:10}}},
+              y:{grid:{color:'#1e2d42'},ticks:{color:'#64748b'}}}}
+  });
+})();
+
+// ── RSI CHART ──
+(function(){
+  const N = 60;
+  const labels = Array.from({length:N},(_,i)=>'D'+(i+1));
+  // generate price for RSI calc
+  const price = [];
+  let p = 50;
+  for(let i=0;i<N;i++){
+    p += (Math.random()-0.5)*2.2;
+    price.push(p);
+  }
+  // simple RSI(14)
+  const period = 14;
+  const rsi = [];
+  for(let i=0;i<N;i++){
+    if(i<period){ rsi.push(null); continue; }
+    let gains=0, losses=0;
+    for(let j=i-period+1;j<=i;j++){
+      const d = price[j]-price[j-1];
+      if(d>0) gains+=d; else losses-=d;
+    }
+    const rs = losses===0 ? 100 : gains/losses;
+    rsi.push(parseFloat((100 - 100/(1+rs)).toFixed(1)));
+  }
+  new Chart(document.getElementById('rsiChart'),{
+    type:'line',
+    data:{labels:labels,datasets:[
+      {label:'RSI(14)',data:rsi,borderColor:'#2dd4bf',backgroundColor:'rgba(45,212,191,0.08)',borderWidth:2,pointRadius:0,fill:true,tension:0.3}
+    ]},
+    options:{responsive:true,
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:'#111827',titleColor:'#fff',bodyColor:'#94a3b8'},
+        annotation:{annotations:{
+          ob:{type:'line',yMin:70,yMax:70,borderColor:'#f87171',borderWidth:1,borderDash:[4,4],label:{content:'OVERBOUGHT 70',display:true,position:'start',backgroundColor:'rgba(248,113,113,0.15)',color:'#f87171',font:{family:'IBM Plex Mono',size:9},padding:4}},
+          os:{type:'line',yMin:30,yMax:30,borderColor:'#4ade80',borderWidth:1,borderDash:[4,4],label:{content:'OVERSOLD 30',display:true,position:'start',backgroundColor:'rgba(74,222,128,0.15)',color:'#4ade80',font:{family:'IBM Plex Mono',size:9},padding:4}}
+        }}
+      },
+      scales:{x:{grid:{display:false},ticks:{maxTicksLimit:8,color:'#4a5568',font:{family:'IBM Plex Mono',size:10}}},
+              y:{min:0,max:100,grid:{color:'#1e2d42'},ticks:{color:'#64748b',stepSize:25}}}
+    }
+  });
+})();
+
+</script>
+<script src="/review-overlay.js"></script>
+</body>
+</html>

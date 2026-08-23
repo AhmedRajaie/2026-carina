@@ -1,0 +1,33 @@
+[project]
+name = "tradinglab"
+version = "0.1.0"
+description = "EFG Data Science algorithmic trading internship"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=2.0,<3",
+    "pandas>=2.2",
+    "gymnasium>=1.0,<2",
+    "stable-baselines3>=2.7,<3",
+    "torch>=2.2",
+    "scipy>=1.11",
+    "matplotlib>=3.8",
+    "jupyter>=1.0",
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tradinglab"]
+
+[dependency-groups]
+dev = [
+    "nbstripout>=0.9.1",
+    "pytest>=9.1.1",
+]

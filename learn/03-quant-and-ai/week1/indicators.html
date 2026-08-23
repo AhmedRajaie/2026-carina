@@ -1,0 +1,47 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Indicators | EFG Hermes</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0e14;--card:#111827;--border:#1e2d42;--gold:#c9a84c;--teal:#2dd4bf;
+--teal-dim:#0d9488;--red:#f87171;--green:#4ade80;--text:#e2e8f0;--text-dim:#94a3b8;--text-muted:#4a5568;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:15px;line-height:1.7;}
+header{padding:56px 0 64px;text-align:center;border-bottom:1px solid var(--border);position:relative;overflow:hidden;}
+header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(201,168,76,.12) 0%,transparent 70%);}
+.efg{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase;margin-bottom:24px;position:relative;}
+.tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--teal);border:1px solid var(--teal-dim);padding:4px 14px;border-radius:2px;margin-bottom:18px;position:relative;}
+h1{font-family:'Playfair Display',serif;font-size:clamp(32px,5vw,56px);font-weight:900;line-height:1.1;position:relative;
+background:linear-gradient(135deg,#fff 30%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:14px;}
+.subtitle{color:var(--text-dim);font-size:16px;max-width:560px;margin:0 auto;position:relative;}
+.container{max-width:860px;margin:0 auto;padding:0 24px;}
+.section{padding:52px 0;border-bottom:1px solid var(--border);}
+.snum{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:3px;margin-bottom:8px;display:block;}
+.stitle{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#fff;margin-bottom:16px;}
+p{margin-bottom:16px;color:var(--text);}
+.dim{color:var(--text-dim);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin:24px 0;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:22px;transition:border-color .2s,transform .2s;}
+.card:hover{border-color:var(--gold);transform:translateY(-2px);}
+.card-title{font-weight:600;color:#fff;margin-bottom:8px;font-size:15px;}
+.card-body{color:var(--text-dim);font-size:14px;line-height:1.6;}
+.flow{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin:24px 0;}
+.fitem{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:16px 18px;flex:1;min-width:120px;text-align:center;}
+.flabel{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.fdesc{font-size:13px;color:var(--text-dim);}
+.farrow{color:var(--gold);font-size:20px;padding:0 8px;}
+.callout{background:linear-gradient(135deg,rgba(201,168,76,.08),rgba(45,212,191,.04));border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:4px;padding:20px 24px;margin:24px 0;}
+.callout .k{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:8px;}
+.code-note{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:16px 20px;margin:20px 0;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--teal);}
+.takeaway{background:var(--card);border:1px solid var(--gold);border-radius:4px;padding:24px;margin:32px 0;}
+.takeaway .k{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:10px;}
+.takeaway p{font-size:16px;color:#fff;margin:0;}
+footer{text-align:center;padding:40px 0;color:var(--text-muted);font-size:12px;font-family:'IBM Plex Mono',monospace;}
+</style></head><body>
+<header><div class="container"><div class="efg">EFG Hermes · Data Science</div>
+<div class="tag">WEEK 1 · CONCEPT</div><h1>Indicators</h1><p class="subtitle">A raw price is just a number. An indicator turns a stream of prices into a signal you can act on.</p></div></header>
+<div class="container"><div class="section"><span class="snum">01</span><h2 class="stitle">Why indicators exist</h2><p>A price on its own tells you almost nothing. Is 18.50 high or low? Rising or falling? Calm or wild? An <b>indicator</b> is a simple calculation over recent prices that answers one of those questions with a number. You already know the idea from everyday life: a moving average is just a running mean, the way you might average your last few electricity bills to see the trend through the noise.</p></div>
+<div class="section"><span class="snum">02</span><h2 class="stitle">The four you'll build</h2><div class="card-grid"><div class="card"><div class="card-title">SMA — Simple Moving Average</div><div class="card-body">The average of the last N prices, recalculated each day. Smooths out daily noise so a trend becomes visible. A short SMA rising above a long SMA is a classic 'uptrend' signal.</div></div><div class="card"><div class="card-title">EMA — Exponential Moving Average</div><div class="card-body">Like the SMA, but recent days count more than old ones. It reacts faster to a change in direction.</div></div><div class="card"><div class="card-title">RSI — Relative Strength Index</div><div class="card-body">A 0–100 gauge of how hard price has been pushed up vs down lately. Above ~70 is often called 'overbought', below ~30 'oversold'.</div></div><div class="card"><div class="card-title">Volatility</div><div class="card-body">The standard deviation of returns — how much price bounces around. Your first real measure of risk.</div></div></div></div>
+<div class="section"><span class="snum">03</span><h2 class="stitle">From indicator to decision</h2><p>Indicators are the raw material of a strategy. A rule as simple as 'hold the stock when its short average is above its long average' is a complete trading strategy — and it's the one you build in week 1.</p><div class="flow"><div class="fitem"><div class="flabel">Prices</div><div class="fdesc">raw daily closes</div></div><div class="farrow">&rarr;</div><div class="fitem"><div class="flabel">Indicator</div><div class="fdesc">SMA, RSI, volatility</div></div><div class="farrow">&rarr;</div><div class="fitem"><div class="flabel">Signal</div><div class="fdesc">in / out, how much</div></div><div class="farrow">&rarr;</div><div class="fitem"><div class="flabel">Position</div><div class="fdesc">what you hold</div></div></div><div class="code-note">In this program: you implement these in src/tradinglab/indicators.py (week 1, day 2–3).</div></div>
+<div class="takeaway"><div class="k">Take this with you</div><p>An indicator is just arithmetic over recent prices. Simple math, but it's the bridge from 'a number on a screen' to 'a decision you can defend'.</p></div></div>
+<footer>EFG Hermes — Algorithmic Trading Internship</footer></body></html>
