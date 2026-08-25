@@ -1,19 +1,214 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Trading Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: system-ui, sans-serif; margin: 24px; background:#0b1220; color:#e6edf3; }
-    .panel { background:#111a2b; border-radius:10px; padding:16px; margin-bottom:20px; }
-    h1 { font-weight:600; }
+    :root {
+      --bg: #ffffff;
+      --panel: #ffffff;
+      --border: #d1fae5;
+      --text: #1e293b;
+      --muted: #64748b;
+      --mint: #10b981;
+      --mint-dark: #059669;
+      --mint-light: #d1fae5;
+      --shadow: 0 1px 3px rgba(16, 185, 129, 0.08), 0 4px 12px rgba(16, 185, 129, 0.06);
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      padding: 20px 24px 40px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    h1 { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.02em; }
+    h1 span { color: var(--mint-dark); }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--mint-light);
+      color: var(--mint-dark);
+      border: 1px solid var(--mint);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mint); }
+    .pill.err { background: #fee2e2; color: #b91c1c; border-color: #ef4444; }
+    .pill.err .dot { background: #ef4444; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      min-height: 320px;
+    }
+    .panel h2 {
+      font-size: 14px;
+      font-weight: 700;
+      margin: 0 0 4px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .panel h2 .tag {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--mint-dark);
+      background: var(--mint-light);
+      border-radius: 6px;
+      padding: 2px 8px;
+    }
+    .panel .sub { font-size: 12px; color: var(--muted); margin: 0 0 12px; }
+    .panel .body { flex: 1; position: relative; min-height: 0; }
+    canvas { width: 100% !important; }
+
+    .span-12 { grid-column: span 12; }
+    .span-7 { grid-column: span 7; }
+    .span-6 { grid-column: span 6; }
+    .span-5 { grid-column: span 5; }
+    .span-4 { grid-column: span 4; }
+
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .chip {
+      background: var(--mint-light);
+      border: 1px solid var(--mint);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: var(--mint-dark);
+      font-weight: 600;
+    }
+    .chip b { display: block; font-size: 14px; color: var(--text); font-weight: 700; }
+
+    select {
+      font: inherit;
+      font-size: 13px;
+      color: var(--text);
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+    .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .toolbar label { font-size: 12px; color: var(--muted); font-weight: 600; }
+
+    table.risk { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
+    table.risk th, table.risk td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--border); }
+    table.risk th { color: var(--muted); font-weight: 600; }
+    table.risk td:first-child, table.risk th:first-child { text-align: left; }
+    table.risk .pos { color: var(--mint-dark); font-weight: 700; }
+    table.risk .neg { color: #b91c1c; font-weight: 700; }
+
+    .note { color: var(--muted); font-size: 12px; font-style: italic; }
+    .bars { display: flex; flex-direction: column; gap: 8px; }
+    .bar-row { display: grid; grid-template-columns: 120px 1fr 60px; align-items: center; gap: 10px; font-size: 12px; }
+    .bar-row .lbl { color: var(--text); font-weight: 600; }
+    .bar-track { height: 14px; background: var(--mint-light); border-radius: 7px; overflow: hidden; }
+    .bar-fill { height: 100%; background: var(--mint); border-radius: 7px; }
+    .bar-row .val { text-align: right; color: var(--muted); font-weight: 600; }
+
+    @media (max-width: 900px) {
+      .span-12, .span-7, .span-6, .span-5, .span-4 { grid-column: span 12; }
+      .panel { min-height: 280px; }
+    }
   </style>
 </head>
 <body>
-  <h1>Trading Dashboard</h1>
-  <div class="panel" id="status">connecting…</div>
-  <!-- TASK_02+ : add <canvas> panels for price, indicators, equity curve -->
+  <header>
+    <h1>Trading <span>Dashboard</span></h1>
+    <div class="pill" id="status"><span class="dot"></span><span id="status-text">connecting…</span></div>
+  </header>
+
+  <div class="grid">
+    <!-- Row 1 -->
+    <section class="panel span-6">
+      <h2>Price &amp; SMA <span class="tag">live</span></h2>
+      <p class="sub">Close price with a simple moving average overlay.</p>
+      <div class="toolbar">
+        <label for="price-symbol">Symbol</label>
+        <select id="price-symbol"></select>
+      </div>
+      <div class="body"><canvas id="price-chart"></canvas></div>
+    </section>
+
+    <section class="panel span-6">
+      <h2>Equity vs EGX30 <span class="tag">SMA backtest</span></h2>
+      <p class="sub">Strategy equity curve against the EGX30 benchmark (EGP, 1000 start).</p>
+      <div class="chips" id="metric-chips"></div>
+      <div class="body"><canvas id="equity-chart"></canvas></div>
+    </section>
+
+    <!-- Row 2 -->
+    <section class="panel span-7">
+      <h2>Strategy Leaderboard <span class="tag">SMA · MPT · Benchmark</span></h2>
+      <p class="sub">Cumulative equity of the two rule-based strategies vs the index.</p>
+      <div class="body"><canvas id="leaderboard-chart"></canvas></div>
+      <table class="risk" id="risk-table"></table>
+    </section>
+
+    <section class="panel span-5">
+      <h2>Model Input <span class="tag">features</span></h2>
+      <p class="sub">The 9 features the model sees for a symbol on the latest day.</p>
+      <div class="toolbar">
+        <label for="feature-symbol">Symbol</label>
+        <select id="feature-symbol"></select>
+      </div>
+      <div class="body"><div class="bars" id="feature-bars"></div></div>
+    </section>
+
+    <!-- Row 3 -->
+    <section class="panel span-4">
+      <h2>NN vs LSTM <span class="tag">saved</span></h2>
+      <p class="sub">Saved equity curves for the feed-forward NN and LSTM models.</p>
+      <div class="body"><canvas id="models-chart"></canvas></div>
+    </section>
+
+    <section class="panel span-4">
+      <h2>RL Agent vs Benchmark <span class="tag">saved</span></h2>
+      <p class="sub">Reinforcement-learning agent equity vs the EGX30 benchmark.</p>
+      <div class="body"><canvas id="rl-chart"></canvas></div>
+    </section>
+
+    <section class="panel span-4">
+      <h2>Q-Agent vs Buy &amp; Hold <span class="tag">saved</span></h2>
+      <p class="sub">Q-learning agent equity vs a buy-and-hold benchmark.</p>
+      <div class="body"><canvas id="qagent-chart"></canvas></div>
+    </section>
+
+    <!-- Row 4 -->
+    <section class="panel span-12">
+      <h2>Agent Holdings <span class="tag">latest allocation</span></h2>
+      <p class="sub">The SMA strategy's current weight vector across the universe.</p>
+      <div class="body"><div class="bars" id="allocation-bars"></div></div>
+    </section>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>
