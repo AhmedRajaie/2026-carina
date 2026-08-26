@@ -5,15 +5,66 @@
   <title>Trading Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: system-ui, sans-serif; margin: 24px; background:#0b1220; color:#e6edf3; }
-    .panel { background:#111a2b; border-radius:10px; padding:16px; margin-bottom:20px; }
-    h1 { font-weight:600; }
+  * {
+    box-sizing: border-box;
+  }
+  body { 
+    font-family: system-ui, sans-serif; 
+    margin: 0; 
+    padding: 24px;
+    background: #0d1117; 
+    color: #c9d1d9;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  h1 { 
+    font-weight: 600; 
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  .panel { 
+    background: #111a2b; 
+    border: 1px solid #30363d;
+    border-radius: 10px; 
+    padding: 24px; 
+    width: 100%;
+  }
+  .chart-panel {
+    height: 400px;
+    position: relative;
+  }
+
+  select { background:#0b1220; color:#e6edf3; border:1px solid #2a3650; border-radius:6px; padding:6px 10px; }
+
+  #metricsText { display:flex; gap:24px; font-size:1.1em; }
+  #metricsText .metric-label { color:#9aa7bd; font-size:0.85em; display:block; }
+  #metricsText .metric-value { font-size:1.3em; font-weight:600; }
   </style>
 </head>
 <body>
   <h1>Trading Dashboard</h1>
   <div class="panel" id="status">connecting…</div>
-  <!-- TASK_02+ : add <canvas> panels for price, indicators, equity curve -->
+
+  <div class="panel">
+    <label for="symbolSelect">Symbol:</label>
+    <select id="symbolSelect"></select>
+  </div>
+
+  <div class="panel chart-panel">
+    <canvas id="priceChart"></canvas>
+  </div>
+
+  <div class="panel chart-panel">
+    <canvas id="equityChart"></canvas>
+  </div>
+
+  <div class="panel" id="metricsPanel">
+    <h3 style="margin-top:0;">Strategy Metrics</h3>
+    <div id="metricsText">loading…</div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>
