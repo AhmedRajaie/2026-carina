@@ -1,19 +1,163 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <title>Trading Dashboard</title>
+  <title>Carina Trading Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: system-ui, sans-serif; margin: 24px; background:#0b1220; color:#e6edf3; }
-    .panel { background:#111a2b; border-radius:10px; padding:16px; margin-bottom:20px; }
-    h1 { font-weight:600; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #080f1c;
+      color: #e6edf3;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    /* ── header ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    header h1 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    header h1 span { color: #4da3ff; }
+
+    #statusBadge {
+      font-size: 0.78rem;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: #111a2b;
+      border: 1px solid #1e2d45;
+      color: #8b9baf;
+    }
+    #statusBadge.ok { border-color: #26c466; color: #26c466; }
+    #statusBadge.err { border-color: #ff4d6a; color: #ff4d6a; }
+
+    /* ── panels ── */
+    .panel {
+      background: #0e1826;
+      border: 1px solid #1a2840;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+    }
+    .panel-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #8b9baf;
+      margin-bottom: 14px;
+    }
+
+    /* ── symbol selector ── */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .controls label {
+      font-size: 0.85rem;
+      color: #8b9baf;
+    }
+    #symbolSelect {
+      background: #111a2b;
+      color: #e6edf3;
+      border: 1px solid #1e2d45;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      outline: none;
+    }
+    #symbolSelect:focus { border-color: #4da3ff; }
+
+    /* ── equity row: chart + metrics ── */
+    .equity-row {
+      display: grid;
+      grid-template-columns: 1fr 200px;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 700px) {
+      .equity-row { grid-template-columns: 1fr; }
+    }
+
+    /* ── metric cards ── */
+    .metrics-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .metric-card {
+      background: #111a2b;
+      border: 1px solid #1a2840;
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .metric-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #8b9baf;
+      margin-bottom: 6px;
+    }
+    .metric-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #e6edf3;
+    }
+    .metric-value.positive { color: #26c466; }
+    .metric-value.negative { color: #ff4d6a; }
   </style>
 </head>
 <body>
-  <h1>Trading Dashboard</h1>
-  <div class="panel" id="status">connecting…</div>
-  <!-- TASK_02+ : add <canvas> panels for price, indicators, equity curve -->
+
+  <header>
+    <h1>Carina <span>Trading Dashboard</span></h1>
+    <div id="statusBadge">connecting…</div>
+  </header>
+
+  <!-- Price + Indicator panel -->
+  <div class="panel">
+    <div class="controls">
+      <label for="symbolSelect">Symbol</label>
+      <select id="symbolSelect"></select>
+    </div>
+    <div class="panel-title" id="priceTitle">Price &amp; SMA(20)</div>
+    <canvas id="priceChart" height="90"></canvas>
+  </div>
+
+  <!-- Equity Curve + Metrics panel -->
+  <div class="panel">
+    <div class="panel-title">Strategy vs Benchmark — SMA Crossover</div>
+    <div class="equity-row">
+      <canvas id="equityChart" height="90"></canvas>
+      <div class="metrics-stack" id="metricsStack">
+        <div class="metric-card">
+          <div class="metric-label">Total Return</div>
+          <div class="metric-value" id="mTotalReturn">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Sharpe Ratio</div>
+          <div class="metric-value" id="mSharpe">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Max Drawdown</div>
+          <div class="metric-value" id="mMaxDrawdown">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>
