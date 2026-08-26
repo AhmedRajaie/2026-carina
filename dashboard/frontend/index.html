@@ -117,6 +117,72 @@
     }
     .metric-value.positive { color: #26c466; }
     .metric-value.negative { color: #ff4d6a; }
+
+    /* ── leaderboard table ── */
+    #leaderboardTable {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    #leaderboardTable thead th {
+      text-align: left;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #8b9baf;
+      padding: 0 12px 10px 0;
+      border-bottom: 1px solid #1a2840;
+    }
+    #leaderboardTable tbody tr {
+      border-bottom: 1px solid #1a2840;
+      transition: background 0.15s;
+    }
+    #leaderboardTable tbody tr:last-child { border-bottom: none; }
+    #leaderboardTable tbody tr:hover { background: #111a2b; }
+    #leaderboardTable tbody td {
+      padding: 12px 12px 12px 0;
+      color: #e6edf3;
+    }
+    #leaderboardTable tbody td:first-child {
+      font-weight: 700;
+      color: #8b9baf;
+      width: 32px;
+    }
+    .rank-1 td:first-child { color: #ffd700 !important; }  /* gold  */
+    .rank-2 td:first-child { color: #c0c0c0 !important; }  /* silver */
+    .rank-3 td:first-child { color: #cd7f32 !important; }  /* bronze */
+    .lb-positive { color: #26c466; font-weight: 600; }
+    .lb-negative { color: #ff4d6a; font-weight: 600; }
+
+    /* ── signals table — reuses leaderboard base styles ── */
+    #signalsTable {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    #signalsTable thead th {
+      text-align: left;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #8b9baf;
+      padding: 0 12px 10px 0;
+      border-bottom: 1px solid #1a2840;
+    }
+    #signalsTable tbody tr {
+      border-bottom: 1px solid #1a2840;
+      transition: background 0.15s;
+    }
+    #signalsTable tbody tr:last-child { border-bottom: none; }
+    #signalsTable tbody tr:hover { background: #111a2b; }
+    #signalsTable tbody td { padding: 10px 12px 10px 0; color: #e6edf3; }
+
+    .sig-buy  { color: #26c466; font-weight: 600; }
+    .sig-cash { color: #8b9baf; }
+    .sig-hold { color: #8b9baf; }
+    .rsi-ob   { color: #ff4d6a; font-weight: 600; }  /* overbought > 70 */
+    .rsi-os   { color: #26c466; font-weight: 600; }  /* oversold   < 30 */
+    .rsi-mid  { color: #e6edf3; }
   </style>
 </head>
 <body>
@@ -136,9 +202,24 @@
     <canvas id="priceChart" height="90"></canvas>
   </div>
 
+  <!-- RSI panel -->
+  <div class="panel">
+    <div class="panel-title" id="rsiTitle">RSI (14)</div>
+    <canvas id="rsiChart" height="50"></canvas>
+  </div>
+
   <!-- Equity Curve + Metrics panel -->
   <div class="panel">
-    <div class="panel-title">Strategy vs Benchmark — SMA Crossover</div>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+      <div class="panel-title" style="margin-bottom:0">Strategy vs Benchmarks</div>
+      <div class="controls" style="margin-bottom:0">
+        <label for="strategySelect">Strategy</label>
+        <select id="strategySelect">
+          <option value="sma">SMA Crossover</option>
+          <option value="dip">Dip-Buy (−5% / +10%)</option>
+        </select>
+      </div>
+    </div>
     <div class="equity-row">
       <canvas id="equityChart" height="90"></canvas>
       <div class="metrics-stack" id="metricsStack">
@@ -154,7 +235,58 @@
           <div class="metric-label">Max Drawdown</div>
           <div class="metric-value" id="mMaxDrawdown">—</div>
         </div>
+        <div class="metric-card">
+          <div class="metric-label">Commission</div>
+          <div class="metric-value" id="mCommission">—</div>
+        </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Live Signals panel -->
+  <div class="panel">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+      <div class="panel-title" style="margin-bottom:0">Live Signals</div>
+      <span id="signalsDate" style="font-size:0.78rem; color:#8b9baf;"></span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table id="signalsTable">
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Return</th>
+            <th>RSI (14)</th>
+            <th>RSI Zone</th>
+            <th>SMA Signal</th>
+            <th>Dip-Buy Signal</th>
+          </tr>
+        </thead>
+        <tbody id="signalsBody">
+          <tr><td colspan="6" style="text-align:center;color:#8b9baf;">loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Leaderboard panel -->
+  <div class="panel">
+    <div class="panel-title">Model Leaderboard — ranked by Sharpe Ratio</div>
+    <div style="overflow-x:auto;">
+      <table id="leaderboardTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Strategy</th>
+            <th>Final Value (EGP)</th>
+            <th>Total Return</th>
+            <th>Sharpe Ratio</th>
+            <th>Max Drawdown</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboardBody">
+          <tr><td colspan="6" style="text-align:center;color:#8b9baf;">loading…</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
