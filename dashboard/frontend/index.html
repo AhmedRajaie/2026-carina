@@ -20,6 +20,45 @@
       margin-bottom: 20px;
     }
 
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    select {
+      background: #0b1220;
+      border: 1px solid #303d52;
+      border-radius: 6px;
+      color: #e6edf3;
+      font: inherit;
+      padding: 8px 12px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .metric {
+      background: #18243a;
+      border-radius: 6px;
+      padding: 12px;
+    }
+
+    .metric-label {
+      color: #8b9bb3;
+      display: block;
+      font-size: 0.8rem;
+      margin-bottom: 6px;
+    }
+
+    .metric-value {
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+
     .chart-panel {
       height: min(360px, 60vh);
     }
@@ -27,14 +66,45 @@
     h1 {
       font-weight: 600;
     }
+
+    @media (max-width: 600px) {
+      body {
+        margin: 16px;
+      }
+
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 
 <body>
   <h1>Trading Dashboard</h1>
   <div class="panel" id="status">connecting…</div>
+  <div class="panel toolbar">
+    <label for="symbolSelect">Symbol</label>
+    <select id="symbolSelect"></select>
+  </div>
   <div class="panel chart-panel">
     <canvas id="priceChart"></canvas>
+  </div>
+  <div class="panel chart-panel">
+    <canvas id="equityChart"></canvas>
+  </div>
+  <div class="panel metrics" aria-label="Backtest metrics">
+    <div class="metric">
+      <span class="metric-label">Total return</span>
+      <span class="metric-value" id="totalReturn">—</span>
+    </div>
+    <div class="metric">
+      <span class="metric-label">Sharpe ratio</span>
+      <span class="metric-value" id="sharpe">—</span>
+    </div>
+    <div class="metric">
+      <span class="metric-label">Max drawdown</span>
+      <span class="metric-value" id="maxDrawdown">—</span>
+    </div>
   </div>
   <script src="app.js"></script>
 </body>
