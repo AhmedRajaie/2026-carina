@@ -1,6 +1,7 @@
-// Dashboard frontend. Grows via dashboard/tasks/.
+// Dashboard frontend for the full demo controls.
 const API = "http://localhost:8000";
 let priceChart;
+let equityChart;
 
 async function checkHealth() {
   try {
@@ -11,133 +12,156 @@ async function checkHealth() {
     document.getElementById("status").textContent = "backend not reachable — start uvicorn";
   }
 }
-checkHealth();
 
-async function loadPriceChart(symbol) {
-  let prices;
-  let indicators;
-
-  if (symbol === "FULL_MARKET") {
-    const marketResponse = await fetch(`${API}/market`);
-    prices = await marketResponse.json();
-    const marketIndicatorsResponse = await fetch(`${API}/indicators/full_market?window=20`);
-    indicators = await marketIndicatorsResponse.json();
-  } else {
-    const pricesResponse = await fetch(`${API}/prices/${symbol}`);
-    prices = await pricesResponse.json();
-    const indicatorsResponse = await fetch(`${API}/indicators/${symbol}?window=20`);
-    indicators = await indicatorsResponse.json();
-  }
-
-  if (priceChart) {
-    priceChart.destroy();
-  }
-
-  const label = symbol === "FULL_MARKET" ? "EGX full market" : symbol;
-  document.getElementById("priceTitle").textContent = `${label} closing price and 20-day SMA`;
-  priceChart = new Chart(document.getElementById("priceChart"), {
-    type: "line",
-    data: {
-      labels: prices.dates,
-      datasets: [{
-        label: `${label} close`,
-        data: prices.close,
-        borderColor: "#58a6ff",
-        backgroundColor: "rgba(88, 166, 255, 0.15)",
-        pointRadius: 0,
-        tension: 0.15,
-        fill: true,
-      }, {
-        label: `${label} SMA (20)`,
-        data: indicators.sma,
-        borderColor: "#f2cc60",
-        pointRadius: 0,
-        tension: 0.15,
-        fill: false,
-      }],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-    },
-  });
-}
-
-async function setupSymbolSelector() {
-  const response = await fetch(`${API}/universe`);
-  const symbols = await response.json();
+async function populateUniverseSelector() {
   const select = document.getElementById("symbolSelect");
+  const response = await fetch(`${API}/full_market_universe`);
+  const fullMarket = await response.json();
+  const defaultSymbols = ["COMI", "HRHO", "TMGH", "SWDY", "FWRY"];
 
   const fullMarketOption = document.createElement("option");
-  fullMarketOption.value = "FULL_MARKET";
-  fullMarketOption.textContent = "Full market";
+  fullMarketOption.value = "full_market";
+  fullMarketOption.textContent = "Full Market";
   select.appendChild(fullMarketOption);
 
-  symbols.forEach((symbol) => {
+  defaultSymbols.forEach((symbol) => {
     const option = document.createElement("option");
     option.value = symbol;
     option.textContent = symbol;
     select.appendChild(option);
   });
 
-  select.addEventListener("change", () => loadPriceChart(select.value));
-  select.value = "FULL_MARKET";
-  await loadPriceChart("FULL_MARKET");
+  fullMarket.forEach((symbol) => {
+    if (!defaultSymbols.includes(symbol)) {
+      const option = document.createElement("option");
+      option.value = symbol;
+      option.textContent = symbol;
+      select.appendChild(option);
+    }
+  });
+
+  select.value = "full_market";
 }
 
-setupSymbolSelector();
+async function loadPriceChart() {
+  try {
+    const symbol = document.getElementById("symbolSelect").value || "full_market";
+    let seriesSymbol = symbol;
+    if (symbol === "full_market") {
+      seriesSymbol = "COMI";
+    }
+
+    const pricesResponse = await fetch(`${API}/prices/${seriesSymbol}`);
+    const prices = await pricesResponse.json();
+    const indicatorsResponse = await fetch(`${API}/indicators/${seriesSymbol}?window=20`);
+    const indicators = await indicatorsResponse.json();
+
+    if (priceChart) {
+      priceChart.destroy();
+    }
+
+    priceChart = new Chart(document.getElementById("priceChart"), {
+      type: "line",
+      data: {
+        labels: prices.dates,
+        datasets: [{
+          label: `${seriesSymbol} close`,
+          data: prices.close,
+          borderColor: "#58a6ff",
+          backgroundColor: "rgba(88, 166, 255, 0.15)",
+          pointRadius: 0,
+          tension: 0.15,
+          fill: true,
+        }, {
+          label: `${seriesSymbol} SMA (20)`,
+          data: indicators.sma,
+          borderColor: "#f2cc60",
+          pointRadius: 0,
+          tension: 0.15,
+          fill: false,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+      },
+    });
+  } catch (e) {
+    document.getElementById("status").textContent = "backend not reachable — start uvicorn";
+  }
+}
 
 async function loadEquityChart() {
-  const response = await fetch(`${API}/backtest`);
-  const result = await response.json();
+  try {
+    const benchmark = document.getElementById("benchmarkSelect").value;
+    const capital = document.getElementById("capitalInput").value || 1000;
+    const commission = document.getElementById("commissionInput").value || 0.005;
+    const universe = document.getElementById("symbolSelect").value || "full_market";
 
-  new Chart(document.getElementById("equityChart"), {
-    type: "line",
-    data: {
-      labels: result.dates,
-      datasets: [{
-        label: "SMA strategy",
-        data: result.portfolio,
-        borderColor: "#7ee787",
-        pointRadius: 0,
-        tension: 0.15,
-      }, {
-        label: "EGX30 benchmark",
-        data: result.benchmark,
-        borderColor: "#ff7b72",
-        pointRadius: 0,
-        tension: 0.15,
-      }],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: {
-        title: {
-          display: true,
-          text: "Strategy vs EGX30 Equity (EGP)",
-        },
+    const response = await fetch(`${API}/backtest?universe=${encodeURIComponent(universe)}&benchmark=${encodeURIComponent(benchmark)}&initial_capital=${encodeURIComponent(capital)}&commission=${encodeURIComponent(commission)}`);
+    const result = await response.json();
+
+    if (equityChart) {
+      equityChart.destroy();
+    }
+
+    equityChart = new Chart(document.getElementById("equityChart"), {
+      type: "line",
+      data: {
+        labels: result.dates,
+        datasets: [{
+          label: "TikTok strategy",
+          data: result.portfolio,
+          borderColor: "#7ee787",
+          pointRadius: 0,
+          tension: 0.15,
+        }, {
+          label: benchmark === "equal_weight" ? "Equal Weight" : "Equal Balance",
+          data: result.benchmark,
+          borderColor: "#ff7b72",
+          pointRadius: 0,
+          tension: 0.15,
+        }],
       },
-      scales: {
-        y: {
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
           title: {
             display: true,
-            text: "EGP",
+            text: `Strategy vs ${benchmark === "equal_weight" ? "Equal Weight" : "Equal Balance"} (${capital} EGP)`,
+          },
+        },
+        scales: {
+          y: {
+            title: {
+              display: true,
+              text: "EGP",
+            },
           },
         },
       },
-    },
-  });
+    });
+
+    document.getElementById("totalReturn").textContent = `${(result.return_percentage).toFixed(1)}%`;
+    document.getElementById("finalPortfolioValue").textContent = `EGP ${result.final_portfolio_value.toFixed(0)}`;
+    document.getElementById("finalBenchmarkValue").textContent = `EGP ${result.final_benchmark_value.toFixed(0)}`;
+    document.getElementById("profit").textContent = `EGP ${result.profit.toFixed(0)}`;
+  } catch (e) {
+    document.getElementById("status").textContent = "backend not reachable — start uvicorn";
+  }
 }
 
-loadEquityChart();
-
-async function loadMetrics() {
-  const response = await fetch(`${API}/metrics`);
-  const metrics = await response.json();
-  document.getElementById("totalReturn").textContent = `${(metrics.total_return * 100).toFixed(1)}%`;
-  document.getElementById("sharpe").textContent = metrics.sharpe.toFixed(3);
-  document.getElementById("maxDrawdown").textContent = `${(metrics.max_drawdown * 100).toFixed(1)}%`;
+async function refreshDashboard() {
+  await loadPriceChart();
+  await loadEquityChart();
 }
 
-loadMetrics();
+document.getElementById("symbolSelect").addEventListener("change", refreshDashboard);
+document.getElementById("benchmarkSelect").addEventListener("change", refreshDashboard);
+document.getElementById("capitalInput").addEventListener("change", refreshDashboard);
+document.getElementById("commissionInput").addEventListener("change", refreshDashboard);
+document.getElementById("runBacktestBtn").addEventListener("click", refreshDashboard);
+
+checkHealth();
+populateUniverseSelector().then(refreshDashboard);
