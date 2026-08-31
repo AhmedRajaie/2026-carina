@@ -5,64 +5,299 @@
   <title>Trading Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-  * {
-    box-sizing: border-box;
+  :root {
+    --bg: #0b0f1a;
+    --panel: #111a2b;
+    --border: #232c42;
+    --text: #e6edf3;
+    --text-dim: #8a94a6;
+    --accent-primary: #5b9dfa;   /* main series: price / strategy */
+    --accent-secondary: #f0a857; /* reference series: SMA / benchmark */
+    --positive: #4ade80;
+    --negative: #f87171;
   }
-  body { 
-    font-family: system-ui, sans-serif; 
-    margin: 0; 
-    padding: 24px;
-    background: #0d1117; 
-    color: #c9d1d9;
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, system-ui, "Segoe UI", sans-serif;
+    margin: 0;
+    padding: 28px 32px 40px;
+    background: var(--bg);
+    color: var(--text);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     gap: 20px;
   }
-  h1 { 
-    font-weight: 600; 
-    margin-top: 0;
-    margin-bottom: 0;
+
+  /* ---------- Header ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
   }
-  .panel { 
-    background: #111a2b; 
-    border: 1px solid #30363d;
-    border-radius: 10px; 
-    padding: 24px; 
+  h1 {
+    font-weight: 600;
+    font-size: 1.5em;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: #0e1524;
+    border: 1px solid var(--border);
+    font-size: 0.85em;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    flex-shrink: 0;
+    transition: background 0.2s ease;
+  }
+  .status-pill.online .status-dot { background: var(--positive); box-shadow: 0 0 6px rgba(74, 222, 128, 0.6); }
+  .status-pill.offline .status-dot { background: var(--negative); box-shadow: 0 0 6px rgba(248, 113, 113, 0.6); }
+  .status-pill.online .status-label { color: var(--text); }
+
+  /* ---------- Panels ---------- */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
     width: 100%;
   }
-  .chart-panel {
-    height: 400px;
-    position: relative;
+
+  .chart-header-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .chart-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .chart-controls label {
+    color: var(--text-dim);
+    font-size: 0.85em;
+  }
+  select {
+    background: #0e1524;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 12px;
+    font-size: 0.95em;
+  }
+  .segmented {
+    display: inline-flex;
+    background: #0e1524;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+    gap: 2px;
+  }
+  .segmented-btn {
+    background: transparent;
+    color: var(--text-dim);
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.85em;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .segmented-btn:hover { color: var(--text); }
+  .segmented-btn.active {
+    background: var(--accent-primary);
+    color: #0b0f1a;
+    font-weight: 600;
   }
 
-  select { background:#0b1220; color:#e6edf3; border:1px solid #2a3650; border-radius:6px; padding:6px 10px; }
+  /* ---------- Chart panels ---------- */
+  .chart-panel {
+    height: 420px;
+    display: flex;
+    flex-direction: column;
+  }
+  /* Price chart gets a bit more room to show detail */
+  .price-panel {
+    height: 560px;
+  }
+  /* Equity panel needs more vertical room — it holds a chart AND a metrics strip */
+  .equity-panel {
+    height: 700px;
+  }
+  .chart-title {
+    font-size: 1.05em;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .chart-subtitle {
+    font-size: 0.85em;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+  .chart-canvas-wrap {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .chart-canvas-wrap canvas {
+    max-width: 100%;
+    max-height: 100%;
+  }
 
-  #metricsText { display:flex; gap:24px; font-size:1.1em; }
-  #metricsText .metric-label { color:#9aa7bd; font-size:0.85em; display:block; }
-  #metricsText .metric-value { font-size:1.3em; font-weight:600; }
+  /* ---------- Metrics ---------- */
+  #metricsPanel {
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+    margin-top: 16px;
+  }
+  #metricsPanel h3 {
+    margin: 0 0 16px;
+    font-size: 1.05em;
+    font-weight: 600;
+  }
+  .metrics-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .metrics-header-row h4 {
+    margin: 0;
+    font-size: 1.05em;
+    font-weight: 600;
+  }
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .metric-card {
+    background: #0e1524;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .metric-label {
+    color: var(--text-dim);
+    font-size: 0.8em;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .metric-value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .metric-value {
+    font-size: 1.6em;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+  .metric-arrow { font-size: 0.75em; }
+  .metric-value.positive, .metric-arrow.positive { color: var(--positive); }
+  .metric-value.negative, .metric-arrow.negative { color: var(--negative); }
+  .metric-value.neutral { color: var(--text); }
+
+  @media (max-width: 720px) {
+    .metrics-grid { grid-template-columns: 1fr; }
+    .topbar { flex-wrap: wrap; }
+  }
   </style>
 </head>
 <body>
-  <h1>Trading Dashboard</h1>
-  <div class="panel" id="status">connecting…</div>
 
-  <div class="panel">
-    <label for="symbolSelect">Symbol:</label>
-    <select id="symbolSelect"></select>
+  <div class="topbar">
+    <h1>Trading Dashboard</h1>
+    <div class="status-pill" id="statusPill">
+      <span class="status-dot"></span>
+      <span class="status-label" id="statusLabel">connecting…</span>
+    </div>
   </div>
 
-  <div class="panel chart-panel">
-    <canvas id="priceChart"></canvas>
+  <div class="panel chart-panel price-panel">
+    <div class="chart-header-row">
+      <div>
+        <div class="chart-title" id="priceChartTitle">Price &amp; Trend</div>
+        <div class="chart-subtitle" id="priceChartSubtitle">Loading…</div>
+      </div>
+      <div class="chart-controls">
+        <div class="segmented" id="universeToggle">
+          <button type="button" class="segmented-btn active" data-universe="core">Core (5)</button>
+          <button type="button" class="segmented-btn" data-universe="full">Full market (33)</button>
+        </div>
+        <label for="symbolSelect">Symbol</label>
+        <select id="symbolSelect"></select>
+      </div>
+    </div>
+    <div class="chart-canvas-wrap">
+      <canvas id="priceChart"></canvas>
+    </div>
   </div>
 
-  <div class="panel chart-panel">
-    <canvas id="equityChart"></canvas>
-  </div>
-
-  <div class="panel" id="metricsPanel">
-    <h3 style="margin-top:0;">Strategy Metrics</h3>
-    <div id="metricsText">loading…</div>
+  <div class="panel chart-panel equity-panel">
+    <div class="chart-header-row">
+      <div>
+        <div class="chart-title">Strategy vs. Benchmark</div>
+        <div class="chart-subtitle" id="equityChartSubtitle">SMA crossover strategy, growth of 1,000 EGP</div>
+      </div>
+      <div class="chart-controls">
+        <label for="benchmarkSelect">Benchmark</label>
+        <select id="benchmarkSelect">
+          <option value="equal_weight">Equal-Weight</option>
+          <option value="egx30">EGX30</option>
+        </select>
+        <label for="commissionSelect">Commission</label>
+        <select id="commissionSelect">
+          <option value="0">0%</option>
+          <option value="0.0005">0.05%</option>
+          <option value="0.005" selected>0.5%</option>
+        </select>
+      </div>
+    </div>
+    <div class="chart-canvas-wrap equity-canvas-wrap">
+      <canvas id="equityChart"></canvas>
+    </div>
+    <div id="metricsPanel">
+      <div class="metrics-header-row">
+        <h4>Strategy Metrics</h4>
+        <div class="segmented" id="metricsStrategyToggle">
+          <button type="button" class="segmented-btn active" data-strategy="mean_reversion">Mean Reversion</button>
+          <button type="button" class="segmented-btn" data-strategy="sma">SMA Crossover</button>
+        </div>
+      </div>
+      <div class="metrics-grid" id="metricsText">
+        <div class="metric-card"><span class="metric-label">Total Return</span><span class="metric-value neutral">—</span></div>
+        <div class="metric-card"><span class="metric-label">Sharpe Ratio</span><span class="metric-value neutral">—</span></div>
+        <div class="metric-card"><span class="metric-label">Max Drawdown</span><span class="metric-value neutral">—</span></div>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>
