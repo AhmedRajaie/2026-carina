@@ -1,19 +1,66 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <title>Trading Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    body { font-family: system-ui, sans-serif; margin: 24px; background:#0b1220; color:#e6edf3; }
-    .panel { background:#111a2b; border-radius:10px; padding:16px; margin-bottom:20px; }
-    h1 { font-weight:600; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>EGX Strategy Dashboard</title>
+  <link rel="stylesheet" href="styles.css"/>
 </head>
 <body>
-  <h1>Trading Dashboard</h1>
-  <div class="panel" id="status">connecting…</div>
-  <!-- TASK_02+ : add <canvas> panels for price, indicators, equity curve -->
+  <main class="dashboard-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">EFG · WEEK 1 STRATEGY LAB</p>
+        <h1>EGX Strategy Dashboard</h1>
+        <p class="subtitle">A transparent SMA crossover compared with the real EGX30 benchmark.</p>
+      </div>
+      <div id="status" class="status-pill status-loading" role="status" aria-live="polite">Connecting…</div>
+    </header>
+
+    <section class="toolbar" aria-label="Dashboard controls">
+      <label for="symbolSelect">EGX symbol</label>
+      <select id="symbolSelect" disabled aria-label="Select an EGX symbol"></select>
+      <span id="dataRange" class="data-range"></span>
+    </section>
+
+    <section class="analysis-grid">
+      <article id="pricePanel" class="panel chart-panel" aria-busy="true">
+        <div class="panel-heading">
+          <div><p class="panel-kicker">MARKET VIEW</p><h2 id="priceTitle">Price + 20-day SMA</h2></div>
+        </div>
+        <div class="chart-wrap"><canvas id="priceChart" aria-label="Selected stock closing price and 20-day simple moving average">Price chart will appear when the backend is connected.</canvas></div>
+        <p id="priceError" class="panel-error" role="alert" hidden></p>
+      </article>
+
+      <aside id="smaPulse" class="panel pulse-card" aria-live="polite">
+        <p class="panel-kicker">LATEST SMA PULSE</p>
+        <h2 id="pulsePosition">Waiting for data</h2>
+        <dl>
+          <div><dt>Latest close</dt><dd id="pulseClose">—</dd></div>
+          <div><dt>20-day SMA</dt><dd id="pulseSma">—</dd></div>
+          <div><dt>Distance</dt><dd id="pulseDistance">—</dd></div>
+        </dl>
+        <p id="pulseDate" class="pulse-note">Informational snapshot, not a trading recommendation.</p>
+      </aside>
+    </section>
+
+    <section id="performanceSection" class="performance-stack" aria-label="Strategy performance">
+      <div class="metrics-grid">
+        <article class="metric-card"><span>Total return</span><strong id="totalReturn">—</strong><small>Since 2019-09-26</small></article>
+        <article class="metric-card"><span>Sharpe ratio</span><strong id="sharpe">—</strong><small>Annualized risk-adjusted return</small></article>
+        <article class="metric-card"><span>Max drawdown</span><strong id="maxDrawdown">—</strong><small>Worst peak-to-trough decline</small></article>
+      </div>
+      <article class="panel chart-panel">
+        <div class="panel-heading">
+          <div><p class="panel-kicker">BACKTEST</p><h2>SMA strategy vs real EGX30</h2></div>
+          <span class="legend-note">Starting capital: 1,000 EGP</span>
+        </div>
+        <div class="chart-wrap chart-wrap-large"><canvas id="equityChart" aria-label="SMA strategy portfolio value compared with EGX30">Equity chart will appear when the backend is connected.</canvas></div>
+        <p id="performanceError" class="panel-error" role="alert" hidden></p>
+      </article>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
