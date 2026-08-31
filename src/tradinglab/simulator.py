@@ -43,7 +43,8 @@ class PortfolioSimulator:
         benchmark: str = "equal_weight",
         benchmark_returns: np.ndarray | None = None,
         egx30_path: str | None = None,
-        commission: float = 0.0,
+        commission: float = 0.005,
+        initial_capital: float = 1000.0,
     ):
         """
         benchmark: which built-in benchmark to use — "equal_weight" (default,
@@ -58,6 +59,7 @@ class PortfolioSimulator:
         """
         self.feed = feed
         self.commission = commission
+        self.initial_capital = float(initial_capital)
 
         if benchmark_returns is not None:
             # Explicit override wins over everything.
@@ -75,8 +77,24 @@ class PortfolioSimulator:
         elif benchmark == "equal_weight":
             # Equal-weight buy-and-hold ≈ mean of per-asset returns.
             self.benchmark_returns = feed.returns.mean(axis=1)
+        elif benchmark == "equal_balance":
+            # Equal-capital benchmark: each asset starts with the same dollar value
+            # and the benchmark value is the sum of those holdings. This matches the
+            # requirement to allocate the full portfolio capital equally across the
+            # trading universe and track the total value of the basket.
+            asset_value = np.full(feed.n_assets, self.initial_capital / feed.n_assets)
+            benchmark_returns = np.zeros(feed.n_days)
+            prev_total = self.initial_capital
+            for day_index in range(1, feed.n_days):
+                asset_value *= 1.0 + feed.returns[day_index]
+                total_value = float(asset_value.sum())
+                benchmark_returns[day_index] = total_value / prev_total - 1.0
+                prev_total = total_value
+            self.benchmark_returns = benchmark_returns
         else:
-            raise ValueError(f"unknown benchmark '{benchmark}'. use 'equal_weight' or 'egx30'.")
+            raise ValueError(
+                f"unknown benchmark '{benchmark}'. use 'equal_weight', 'equal_balance', or 'egx30'."
+            )
 
     def step_return(self, weights: np.ndarray, day_index: int) -> float:
         """Portfolio return earned by holding `weights` from day_index to +1.
@@ -130,9 +148,12 @@ class PortfolioSimulator:
             turnover = np.abs(held - prev_held).sum(axis=1) / 2
             port_rets = port_rets - self.commission * turnover
 
+        portfolio_value = self.initial_capital * np.cumprod(1.0 + port_rets)
+        benchmark_value = self.initial_capital * np.cumprod(1.0 + bench_rets)
+
         return {
-            "portfolio": np.cumprod(1.0 + port_rets),
-            "benchmark": np.cumprod(1.0 + bench_rets),
+            "portfolio": portfolio_value,
+            "benchmark": benchmark_value,
             "portfolio_returns": port_rets,
             "benchmark_returns": bench_rets,
             "dates": self.feed.dates[start + 1 : end + 1],
