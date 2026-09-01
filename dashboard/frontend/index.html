@@ -185,8 +185,49 @@
     <section class="panel">
       <div class="panel-heading">
         <div>
+          <h2>Full-Market Neural Portfolio</h2>
+          <p id="neuralSubtitle">Loading the 34-stock MLP and LSTM comparison…</p>
+        </div>
+      </div>
+      <div class="equity-layout">
+        <div class="chart-wrap"><canvas id="neuralChart"></canvas></div>
+        <aside class="metrics" aria-label="LSTM portfolio metrics">
+          <div class="metric"><span class="metric-label">LSTM final value</span><span class="metric-value" id="neuralFinalEquity">—</span></div>
+          <div class="metric"><span class="metric-label">LSTM return</span><span class="metric-value" id="neuralTotalReturn">—</span></div>
+          <div class="metric"><span class="metric-label">LSTM Sharpe</span><span class="metric-value" id="neuralSharpe">—</span></div>
+          <div class="metric"><span class="metric-label">LSTM max drawdown</span><span class="metric-value" id="neuralMaxDrawdown">—</span></div>
+        </aside>
+      </div>
+      <div class="signal-summary" id="neuralRobustness" style="margin-top: 18px;">
+        <span>Loading seed-robustness evidence…</span>
+      </div>
+      <div class="table-wrap" style="margin-top: 18px;">
+        <table aria-label="Neural portfolio comparison">
+          <thead>
+            <tr><th>Portfolio</th><th>Final value</th><th>Return</th><th>Sharpe</th><th>Max drawdown</th><th>Fees</th><th>Rebalances</th></tr>
+          </thead>
+          <tbody id="neuralComparisonBody">
+            <tr><td colspan="7">Loading neural portfolios…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-wrap" style="margin-top: 14px;">
+        <table aria-label="Latest neural portfolio holdings">
+          <thead>
+            <tr><th>Model</th><th>Symbol</th><th>Predicted return</th><th>Weight</th></tr>
+          </thead>
+          <tbody id="neuralHoldingsBody">
+            <tr><td colspan="4">Loading latest holdings…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
           <h2>Strategy Comparison</h2>
-          <p>SMA follows the selected universe; fixed-dollar always uses the full market.</p>
+          <p>SMA follows the selected universe; fixed-dollar and neural top-K portfolios use the full market.</p>
         </div>
       </div>
       <div class="table-wrap">

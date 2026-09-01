@@ -1,0 +1,26 @@
+{
+  "settings": {
+    "seeds": [0, 1, 2, 3, 4],
+    "epochs": 100,
+    "hidden": 32,
+    "sequence_length": 10,
+    "top_k": 5,
+    "rebalance_every": 5,
+    "commission": 0.005
+  },
+  "runs": [
+    {"seed": 0, "test_mse": 0.00063995, "final_equity": 1150.70, "total_return": 0.1507, "sharpe": 0.578, "max_drawdown": -0.1292},
+    {"seed": 1, "test_mse": 0.00068235, "final_equity": 1674.87, "total_return": 0.6749, "sharpe": 1.798, "max_drawdown": -0.1472},
+    {"seed": 2, "test_mse": 0.00063074, "final_equity": 1040.47, "total_return": 0.0405, "sharpe": 0.240, "max_drawdown": -0.2101},
+    {"seed": 3, "test_mse": 0.00062694, "final_equity": 1247.84, "total_return": 0.2478, "sharpe": 0.800, "max_drawdown": -0.2268},
+    {"seed": 4, "test_mse": 0.00062055, "final_equity": 1010.52, "total_return": 0.0105, "sharpe": 0.160, "max_drawdown": -0.2529}
+  ],
+  "summary": {
+    "positive_runs": 5,
+    "beat_mlp_runs": 5,
+    "beat_benchmark_runs": 0,
+    "total_runs": 5,
+    "mean_final_equity": 1224.88,
+    "std_final_equity": 268.55
+  }
+}

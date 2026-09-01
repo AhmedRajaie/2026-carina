@@ -30,6 +30,8 @@ TIKTOK_COMMISSION = 0.005
 feed = DataFeed.from_dir("data/egx", symbols=CORE_SYMBOLS)
 full_market_feed = DataFeed.from_dir("data/egx")
 FEATURES_PATH = Path("dashboard/data/features.json")
+NEURAL_PORTFOLIO_PATH = Path("dashboard/data/neural_portfolio.json")
+NEURAL_ROBUSTNESS_PATH = Path("dashboard/data/neural_robustness.json")
 
 app = FastAPI(title="Younit-style trading dashboard")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -131,6 +133,28 @@ def metrics(scope: str = "core"):
 @app.get("/features")
 def features():
     return json.loads(FEATURES_PATH.read_text(encoding="utf-8"))
+
+
+@app.get("/neural-portfolio")
+def neural_portfolio():
+    """Return the precomputed full-market MLP/LSTM portfolio comparison."""
+    if not NEURAL_PORTFOLIO_PATH.exists():
+        raise HTTPException(
+            status_code=503,
+            detail="Neural portfolio data has not been generated yet",
+        )
+    return json.loads(NEURAL_PORTFOLIO_PATH.read_text(encoding="utf-8"))
+
+
+@app.get("/neural-robustness")
+def neural_robustness():
+    """Return the repeatability check across independent LSTM seeds."""
+    if not NEURAL_ROBUSTNESS_PATH.exists():
+        raise HTTPException(
+            status_code=503,
+            detail="Neural seed-robustness data has not been generated yet",
+        )
+    return json.loads(NEURAL_ROBUSTNESS_PATH.read_text(encoding="utf-8"))
 
 
 @lru_cache(maxsize=32)

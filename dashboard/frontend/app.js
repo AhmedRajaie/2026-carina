@@ -3,10 +3,12 @@ const API = "http://localhost:8000";
 let priceChart;
 let equityChart;
 let tiktokChart;
+let neuralChart;
 let currentScope = "core";
 let currentBenchmark = "egx30";
 let latestSmaMetrics;
 let latestTikTokResult;
+let latestNeuralResult;
 
 Chart.defaults.color = "#91a4ba";
 Chart.defaults.borderColor = "rgba(145, 164, 186, 0.12)";
@@ -226,8 +228,137 @@ function money(value) {
   return `$${value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 }
 
+function egp(value) {
+  return `${value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} EGP`;
+}
+
+function fixedDollarComparison(targetDates, tiktokResult) {
+  if (!tiktokResult) return null;
+  const indexByDate = new Map(tiktokResult.dates.map((date, index) => [date, index]));
+  const firstIndex = indexByDate.get(targetDates[0]);
+  if (firstIndex === undefined) return null;
+  const baseIndex = Math.max(0, firstIndex - 1);
+  const baseValue = tiktokResult.portfolio[baseIndex];
+  const equity = targetDates.map((date) => {
+    const index = indexByDate.get(date);
+    return index === undefined ? null : tiktokResult.portfolio[index] / baseValue * 1000;
+  });
+  if (equity.some((value) => value === null)) return null;
+
+  const returns = equity.map((value, index) =>
+    index === 0 ? value / 1000 - 1 : value / equity[index - 1] - 1
+  );
+  const mean = returns.reduce((sum, value) => sum + value, 0) / returns.length;
+  const variance = returns.reduce((sum, value) => sum + (value - mean) ** 2, 0) /
+    Math.max(1, returns.length - 1);
+  const volatility = Math.sqrt(variance);
+  let peak = 1000;
+  let maxDrawdown = 0;
+  for (const value of equity) {
+    peak = Math.max(peak, value);
+    maxDrawdown = Math.min(maxDrawdown, value / peak - 1);
+  }
+  return {
+    equity,
+    metrics: {
+      final_equity: equity.at(-1),
+      total_return: equity.at(-1) / 1000 - 1,
+      sharpe: volatility > 0 ? Math.sqrt(252) * mean / volatility : 0,
+      max_drawdown: maxDrawdown,
+      fees_paid: null,
+      rebalances: null,
+    },
+  };
+}
+
+async function loadNeuralPortfolio() {
+  const [response, robustnessResponse] = await Promise.all([
+    fetch(`${API}/neural-portfolio`),
+    fetch(`${API}/neural-robustness`),
+  ]);
+  if (!response.ok || !robustnessResponse.ok) {
+    throw new Error("Neural portfolio data is unavailable");
+  }
+  const [result, robustness] = await Promise.all([
+    response.json(),
+    robustnessResponse.json(),
+  ]);
+  latestNeuralResult = result;
+  const {settings, metrics} = result;
+  const fixedDollar = fixedDollarComparison(result.dates, latestTikTokResult);
+
+  document.getElementById("neuralSubtitle").textContent =
+    `${result.symbols.length} assets · Top ${settings.top_k} equal-weight · ` +
+    `Rebalance every ${settings.rebalance_every} sessions · ${(settings.commission * 100).toFixed(1)}% commission` +
+    (fixedDollar ? " · Fixed-dollar rebased to the same test start" : "");
+  document.getElementById("neuralFinalEquity").textContent = egp(metrics.lstm.final_equity);
+  document.getElementById("neuralTotalReturn").textContent = `${(metrics.lstm.total_return * 100).toFixed(1)}%`;
+  document.getElementById("neuralSharpe").textContent = metrics.lstm.sharpe.toFixed(3);
+  document.getElementById("neuralMaxDrawdown").textContent = `${(metrics.lstm.max_drawdown * 100).toFixed(1)}%`;
+  const seedSummary = robustness.summary;
+  document.getElementById("neuralRobustness").innerHTML =
+    `<span class="signal buy">PROFITABLE ${seedSummary.positive_runs}/${seedSummary.total_runs}</span>` +
+    `<span class="signal buy">BEAT MLP ${seedSummary.beat_mlp_runs}/${seedSummary.total_runs}</span>` +
+    `<span class="signal sell">BEAT EGX30 ${seedSummary.beat_benchmark_runs}/${seedSummary.total_runs}</span>` +
+    `<span>Seed-average ending value: ${egp(seedSummary.mean_final_equity)} ± ${egp(seedSummary.std_final_equity)}</span>`;
+
+  if (neuralChart) neuralChart.destroy();
+  neuralChart = new Chart(document.getElementById("neuralChart"), {
+    type: "line",
+    data: {
+      labels: result.dates,
+      datasets: [
+        {label: "MLP portfolio", data: result.mlp, borderColor: "#58a6ff", borderWidth: 2, pointRadius: 0, tension: 0.1},
+        {label: "LSTM portfolio", data: result.lstm, borderColor: "#bc8cff", borderWidth: 2, pointRadius: 0, tension: 0.1},
+        ...(fixedDollar ? [{label: "Fixed-dollar (rebased)", data: fixedDollar.equity, borderColor: "#3fb950", borderWidth: 2, pointRadius: 0, tension: 0.1}] : []),
+        {label: "Real EGX30", data: result.benchmark, borderColor: "#d29922", borderWidth: 2, borderDash: [6, 4], pointRadius: 0, tension: 0.1},
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {mode: "index", intersect: false},
+      plugins: {title: {display: true, text: "1,000 EGP: MLP vs LSTM vs Fixed-Dollar vs EGX30"}},
+      scales: {
+        x: {ticks: {maxTicksLimit: 12}},
+        y: {title: {display: true, text: "Portfolio value (EGP)"}},
+      },
+    },
+  });
+
+  const comparisonRows = [
+    {name: "MLP", row: metrics.mlp},
+    {name: "LSTM", row: metrics.lstm},
+    ...(fixedDollar ? [{name: "Fixed-dollar", row: fixedDollar.metrics}] : []),
+    {name: "EGX30", row: metrics.benchmark},
+  ];
+  document.getElementById("neuralComparisonBody").innerHTML = comparisonRows.map(({name, row}) => `
+    <tr>
+      <td>${name}</td>
+      <td>${egp(row.final_equity)}</td>
+      <td class="${row.total_return >= 0 ? "positive" : "negative-text"}">${(row.total_return * 100).toFixed(1)}%</td>
+      <td>${row.sharpe.toFixed(3)}</td>
+      <td class="negative-text">${(row.max_drawdown * 100).toFixed(1)}%</td>
+      <td>${row.fees_paid === null ? "Included in curve" : egp(row.fees_paid)}</td>
+      <td>${row.rebalances === null ? "Fixed-dollar orders" : row.rebalances.toLocaleString()}</td>
+    </tr>
+  `).join("");
+
+  document.getElementById("neuralHoldingsBody").innerHTML = ["mlp", "lstm"]
+    .flatMap((model) => result.holdings[model].map((holding) => `
+      <tr>
+        <td>${model.toUpperCase()}</td>
+        <td>${holding.symbol}</td>
+        <td class="positive">${(holding.prediction * 100).toFixed(3)}%</td>
+        <td>${(holding.weight * 100).toFixed(0)}%</td>
+      </tr>
+    `)).join("");
+
+  renderStrategyComparison();
+}
+
 function renderStrategyComparison() {
-  if (!latestSmaMetrics || !latestTikTokResult) return;
+  if (!latestSmaMetrics || !latestTikTokResult || !latestNeuralResult) return;
   const tiktok = latestTikTokResult.metrics;
   const assetCount = document.getElementById("symbolSelect").options.length;
   const rows = [
@@ -250,6 +381,26 @@ function renderStrategyComparison() {
       drawdown: tiktok.max_drawdown,
       fees: tiktok.fees_paid,
       activity: `${(tiktok.buy_trades + tiktok.sell_trades).toLocaleString()} orders`,
+    },
+    {
+      name: "MLP top-K",
+      universe: `Full market (${latestNeuralResult.symbols.length})`,
+      final: latestNeuralResult.metrics.mlp.final_equity,
+      totalReturn: latestNeuralResult.metrics.mlp.total_return,
+      sharpe: latestNeuralResult.metrics.mlp.sharpe,
+      drawdown: latestNeuralResult.metrics.mlp.max_drawdown,
+      fees: latestNeuralResult.metrics.mlp.fees_paid,
+      activity: `${latestNeuralResult.metrics.mlp.rebalances.toLocaleString()} rebalances`,
+    },
+    {
+      name: "LSTM top-K",
+      universe: `Full market (${latestNeuralResult.symbols.length})`,
+      final: latestNeuralResult.metrics.lstm.final_equity,
+      totalReturn: latestNeuralResult.metrics.lstm.total_return,
+      sharpe: latestNeuralResult.metrics.lstm.sharpe,
+      drawdown: latestNeuralResult.metrics.lstm.max_drawdown,
+      fees: latestNeuralResult.metrics.lstm.fees_paid,
+      activity: `${latestNeuralResult.metrics.lstm.rebalances.toLocaleString()} rebalances`,
     },
   ];
 
@@ -362,6 +513,9 @@ async function loadTikTokStrategy(requestedParameters = getTikTokParameters()) {
     },
   });
   renderStrategyComparison();
+  if (latestNeuralResult) {
+    await loadNeuralPortfolio();
+  }
   await loadTikTokSignals(parameters);
 }
 
@@ -390,5 +544,8 @@ loadFeatures();
 initializeTikTokControls();
 loadTikTokStrategy().catch((error) => {
   document.getElementById("tiktokSubtitle").textContent = error.message;
+});
+loadNeuralPortfolio().catch((error) => {
+  document.getElementById("neuralSubtitle").textContent = error.message;
 });
 // TASK_07+ : render additional dashboard panels.
