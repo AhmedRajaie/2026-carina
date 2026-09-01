@@ -100,13 +100,25 @@ async function drawPriceChart(symbol) {
 
 // ── equity curve chart ────────────────────────────────────────────
 async function drawEquityChart(strategy = "sma") {
-  const endpoint = strategy === "dip" ? `${API}/backtest/dip` : `${API}/backtest`;
+  let endpoint;
+  if (strategy === "dip") {
+    endpoint = `${API}/backtest/dip`;
+  } else if (strategy === "mlp") {
+    endpoint = `${API}/backtest/mlp`;
+  } else if (strategy === "lstm") {
+    endpoint = `${API}/backtest/lstm`;
+  } else {
+    endpoint = `${API}/backtest`;
+  }
+  
   const r    = await fetch(endpoint);
   const data = await r.json();
 
   const labels = {
     sma: "SMA Crossover",
     dip: "Dip-Buy (−5% / +10%)",
+    mlp: "MLP (10-day rebalance)",
+    lstm: "LSTM (10-day rebalance)",
   };
 
   if (equityChartInstance) equityChartInstance.destroy();

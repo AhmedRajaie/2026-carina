@@ -2,8 +2,10 @@
 Run: uv run uvicorn dashboard.backend.main:app --reload --port 8000
 """
 import math
+from pathlib import Path
 
 import numpy as np
+import torch
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from tradinglab.data_feed import DataFeed
@@ -14,11 +16,85 @@ from tradinglab.backtester import run_backtest
 from tradinglab.strategies.sma import sma_crossover_weights
 from tradinglab.strategies.dip_buy import DipBuyStrategy
 from tradinglab.metrics import total_return, sharpe, max_drawdown
+from tradinglab.models import MLP, LSTMRegressor
 
 app = FastAPI(title="Younit-style trading dashboard")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 feed = DataFeed.from_dir("data/egx")  # loads all 34 symbols automatically
+
+# Load trained models
+BACKEND_DIR = Path(__file__).parent
+MLP_PATH = BACKEND_DIR / "mlp_model.pt"
+LSTM_PATH = BACKEND_DIR / "lstm_model.pt"
+
+mlp_model = None
+lstm_model = None
+
+if MLP_PATH.exists():
+    mlp_model = MLP(9, hidden=32)  # 9 features
+    mlp_model.load_state_dict(torch.load(MLP_PATH, map_location="cpu"))
+    mlp_model.eval()
+
+if LSTM_PATH.exists():
+    lstm_model = LSTMRegressor(9, hidden=32)  # 9 features
+    lstm_model.load_state_dict(torch.load(LSTM_PATH, map_location="cpu"))
+    lstm_model.eval()
+
+
+class MLPStrategyRebalance10:
+    """MLP strategy — rebalance every 10 days."""
+    def __init__(self, model, feed, top_k=5):
+        self.model = model
+        self.feed = feed
+        self.top_k = top_k
+        self.day_count = 0
+        self.current_weights = None
+    
+    def __call__(self, observation):
+        self.day_count += 1
+        
+        if self.day_count % 10 == 1:
+            n_assets = observation.shape[0]
+            with torch.no_grad():
+                X_torch = torch.as_tensor(observation, dtype=torch.float32)
+                predictions = self.model(X_torch).numpy()
+            
+            top_indices = np.argsort(predictions)[-self.top_k:]
+            weights = np.zeros(n_assets)
+            weights[top_indices] = 1.0 / self.top_k
+            self.current_weights = weights
+        
+        return self.current_weights if self.current_weights is not None else np.zeros(34)
+
+
+class LSTMStrategyRebalance10:
+    """LSTM strategy — rebalance every 10 days."""
+    def __init__(self, model, feed, top_k=5, seq_len=30):
+        self.model = model
+        self.feed = feed
+        self.top_k = top_k
+        self.seq_len = seq_len
+        self.day_count = 0
+        self.current_weights = None
+    
+    def __call__(self, observation):
+        self.day_count += 1
+        
+        if self.day_count % 10 == 1:
+            n_assets = observation.shape[0]
+            seq_window = observation[:, -self.seq_len:, :]
+            
+            with torch.no_grad():
+                X_torch = torch.as_tensor(seq_window, dtype=torch.float32)
+                predictions = self.model(X_torch).numpy()
+            
+            top_indices = np.argsort(predictions)[-self.top_k:]
+            weights = np.zeros(n_assets)
+            weights[top_indices] = 1.0 / self.top_k
+            self.current_weights = weights
+        
+        return self.current_weights if self.current_weights is not None else np.zeros(34)
 
 
 @app.get("/health")
@@ -169,6 +245,54 @@ def backtest_dip():
     }
 
 
+@app.get("/backtest/mlp")
+def backtest_mlp():
+    """MLP strategy — 10-day rebalance."""
+    if mlp_model is None:
+        raise HTTPException(status_code=503, detail="MLP model not loaded")
+    
+    split_day = int(feed.n_days * 0.7)
+    strategy = MLPStrategyRebalance10(mlp_model, feed, top_k=5)
+    sim = PortfolioSimulator(feed, benchmark="egx30", commission=COMMISSION)
+    result = run_backtest(sim, strategy, lookback=30, start=split_day)
+    
+    sim_eq = PortfolioSimulator(feed, benchmark="equal_weight", commission=COMMISSION)
+    strategy_eq = MLPStrategyRebalance10(mlp_model, feed, top_k=5)
+    result_eq = run_backtest(sim_eq, strategy_eq, lookback=30, start=split_day)
+    
+    dates = [d.strftime("%Y-%m-%d") for d in result["dates"]]
+    return {
+        "dates": dates,
+        "portfolio":       [v * 1000 for v in result["portfolio"]],
+        "benchmark_egx30": [v * 1000 for v in result["benchmark"]],
+        "benchmark_equal": [v * 1000 for v in result_eq["benchmark"]],
+    }
+
+
+@app.get("/backtest/lstm")
+def backtest_lstm():
+    """LSTM strategy — 10-day rebalance."""
+    if lstm_model is None:
+        raise HTTPException(status_code=503, detail="LSTM model not loaded")
+    
+    split_day = int(feed.n_days * 0.7)
+    strategy = LSTMStrategyRebalance10(lstm_model, feed, top_k=5, seq_len=30)
+    sim = PortfolioSimulator(feed, benchmark="egx30", commission=COMMISSION)
+    result = run_backtest(sim, strategy, lookback=30, start=split_day)
+    
+    sim_eq = PortfolioSimulator(feed, benchmark="equal_weight", commission=COMMISSION)
+    strategy_eq = LSTMStrategyRebalance10(lstm_model, feed, top_k=5, seq_len=30)
+    result_eq = run_backtest(sim_eq, strategy_eq, lookback=30, start=split_day)
+    
+    dates = [d.strftime("%Y-%m-%d") for d in result["dates"]]
+    return {
+        "dates": dates,
+        "portfolio":       [v * 1000 for v in result["portfolio"]],
+        "benchmark_egx30": [v * 1000 for v in result["benchmark"]],
+        "benchmark_equal": [v * 1000 for v in result_eq["benchmark"]],
+    }
+
+
 @app.get("/leaderboard")
 def leaderboard():
     """Run all strategies and return a ranked comparison table."""
@@ -178,11 +302,32 @@ def leaderboard():
         {"key": "dip",   "name": "Dip-Buy (−5% / +10%)", "lookback": 1,
          "factory": lambda: DipBuyStrategy(dip_threshold=-0.05, take_profit=0.10)},
     ]
+    
+    # Add MLP if model loaded
+    if mlp_model is not None:
+        strategies.append({
+            "key": "mlp",
+            "name": "MLP (10-day rebalance)",
+            "lookback": 30,
+            "factory": lambda: MLPStrategyRebalance10(mlp_model, feed, top_k=5),
+            "start": int(feed.n_days * 0.7)
+        })
+    
+    # Add LSTM if model loaded
+    if lstm_model is not None:
+        strategies.append({
+            "key": "lstm",
+            "name": "LSTM (10-day rebalance)",
+            "lookback": 30,
+            "factory": lambda: LSTMStrategyRebalance10(lstm_model, feed, top_k=5, seq_len=30),
+            "start": int(feed.n_days * 0.7)
+        })
 
     rows = []
     for s in strategies:
         sim    = PortfolioSimulator(feed, benchmark="egx30", commission=COMMISSION)
-        result = run_backtest(sim, s["factory"](), lookback=s["lookback"])
+        start_day = s.get("start", None)
+        result = run_backtest(sim, s["factory"](), lookback=s["lookback"], start=start_day)
 
         equity  = np.array(result["portfolio"])
         rets    = np.diff(equity) / equity[:-1]
@@ -206,13 +351,25 @@ def leaderboard():
 
 @app.get("/metrics")
 def metrics(strategy: str = "sma"):
-    """Return metrics for the selected strategy. ?strategy=sma or ?strategy=dip"""
+    """Return metrics for the selected strategy. ?strategy=sma or ?strategy=dip or ?strategy=mlp or ?strategy=lstm"""
+    sim = PortfolioSimulator(feed, benchmark="egx30", commission=COMMISSION)
+    
     if strategy == "dip":
-        sim = PortfolioSimulator(feed, benchmark="egx30", commission=COMMISSION)
         strat = DipBuyStrategy(dip_threshold=-0.05, take_profit=0.10)
         result = run_backtest(sim, strat, lookback=1)
-    else:
-        sim = PortfolioSimulator(feed, benchmark="egx30", commission=COMMISSION)
+    elif strategy == "mlp":
+        if mlp_model is None:
+            raise HTTPException(status_code=503, detail="MLP model not loaded")
+        split_day = int(feed.n_days * 0.7)
+        strat = MLPStrategyRebalance10(mlp_model, feed, top_k=5)
+        result = run_backtest(sim, strat, lookback=30, start=split_day)
+    elif strategy == "lstm":
+        if lstm_model is None:
+            raise HTTPException(status_code=503, detail="LSTM model not loaded")
+        split_day = int(feed.n_days * 0.7)
+        strat = LSTMStrategyRebalance10(lstm_model, feed, top_k=5, seq_len=30)
+        result = run_backtest(sim, strat, lookback=30, start=split_day)
+    else:  # sma
         result = run_backtest(sim, sma_crossover_weights, lookback=30)
 
     equity = np.array(result["portfolio"])
