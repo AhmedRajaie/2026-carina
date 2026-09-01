@@ -3,6 +3,7 @@ const API = "http://localhost:8000";
 let priceChart;
 let equityChart;
 let tiktokChart;
+let modelLossChart;
 let currentScope = "core";
 let currentBenchmark = "egx30";
 let latestSmaMetrics;
@@ -204,6 +205,82 @@ async function loadFeatures() {
   }
 }
 
+async function loadModelComparison() {
+  const response = await fetch(`${API}/compare`);
+  if (!response.ok) throw new Error("Model comparison failed");
+  const comparison = await response.json();
+
+  // Render loss curves if available
+  if (comparison.lstm_train_losses && comparison.lstm_test_losses) {
+    const epochs = Array.from({ length: comparison.lstm_train_losses.length }, (_, i) => i + 1);
+    if (modelLossChart) modelLossChart.destroy();
+    modelLossChart = new Chart(document.getElementById("modelLossChart"), {
+      type: "line",
+      data: {
+        labels: epochs,
+        datasets: [
+          {
+            label: "LSTM train loss",
+            data: comparison.lstm_train_losses,
+            borderColor: "#bc8cff",
+            backgroundColor: "rgba(188, 140, 255, 0.08)",
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.3,
+          },
+          {
+            label: "LSTM test loss",
+            data: comparison.lstm_test_losses,
+            borderColor: "#f2cc60",
+            backgroundColor: "rgba(242, 204, 96, 0.08)",
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.3,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+          title: { display: false },
+          legend: { display: true, position: "top" },
+        },
+        scales: {
+          y: {
+            type: "linear",
+            title: { display: true, text: "Loss (MSE)" },
+          },
+          x: {
+            title: { display: true, text: "Epoch" },
+          },
+        },
+      },
+    });
+  }
+
+  // Render test metric comparison bars
+  const models = [
+    { name: "MLP", value: comparison.mlp.mse, color: "#58a6ff" },
+    { name: "LSTM", value: comparison.lstm.mse, color: "#bc8cff" },
+  ];
+  const maxValue = Math.max(...models.map((model) => model.value), 1e-12);
+  const container = document.getElementById("modelComparison");
+
+  container.innerHTML = models.map((model) => `
+    <div class="model-row">
+      <div class="model-row-top">
+        <strong>${model.name}</strong>
+        <span>${model.value.toFixed(6)}</span>
+      </div>
+      <div class="model-bar-track">
+        <span class="model-bar" style="width:${(model.value / maxValue) * 100}%; background:${model.color};"></span>
+      </div>
+    </div>
+  `).join("");
+}
+
 function getTikTokParameters() {
   return {
     lookback: Number(document.getElementById("tiktokLookback").value),
@@ -387,6 +464,9 @@ function initializeTikTokControls() {
 checkHealth();
 initializeUniverseControls();
 loadFeatures();
+loadModelComparison().catch((error) => {
+  document.getElementById("modelComparison").innerHTML = `<div class="model-row"><span>${error.message}</span></div>`;
+});
 initializeTikTokControls();
 loadTikTokStrategy().catch((error) => {
   document.getElementById("tiktokSubtitle").textContent = error.message;

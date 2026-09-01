@@ -30,6 +30,7 @@ TIKTOK_COMMISSION = 0.005
 feed = DataFeed.from_dir("data/egx", symbols=CORE_SYMBOLS)
 full_market_feed = DataFeed.from_dir("data/egx")
 FEATURES_PATH = Path("dashboard/data/features.json")
+MODEL_COMPARE_PATH = Path("dashboard/data/model_compare.json")
 
 app = FastAPI(title="Younit-style trading dashboard")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -130,6 +131,13 @@ def metrics(scope: str = "core"):
 @app.get("/features")
 def features():
     return json.loads(FEATURES_PATH.read_text(encoding="utf-8"))
+
+
+@app.get("/compare")
+def model_compare():
+    if not MODEL_COMPARE_PATH.exists():
+        raise HTTPException(status_code=404, detail="Model comparison data not found")
+    return json.loads(MODEL_COMPARE_PATH.read_text(encoding="utf-8"))
 
 
 @lru_cache(maxsize=32)

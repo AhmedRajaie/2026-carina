@@ -193,6 +193,45 @@
       gap: 14px 24px;
     }
 
+    .model-comparison {
+      display: grid;
+      gap: 18px;
+    }
+
+    .model-row {
+      display: grid;
+      gap: 8px;
+    }
+
+    .model-row-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .model-row-top strong {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .model-bar-track {
+      position: relative;
+      height: 12px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(145, 164, 186, 0.14);
+    }
+
+    .model-bar {
+      position: absolute;
+      inset: 0 auto 0 0;
+      border-radius: inherit;
+      box-shadow: 0 0 18px rgba(88, 166, 255, 0.28);
+    }
+
     .feature-row {
       display: grid;
       grid-template-columns: 110px minmax(80px, 1fr) 72px;
@@ -470,6 +509,23 @@
         </div>
       </div>
       <div class="feature-list" id="featureList"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <h2>MLP vs LSTM (training and test loss)</h2>
+          <p>Same EGX30 return setup, same lag features, different architecture.</p>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="modelLossChart"></canvas></div>
+      <div style="margin-top: 24px;">
+        <h3 style="margin: 0 0 16px; font-size: 0.95rem; color: var(--muted);">Test set performance (lower is better)
+        </h3>
+        <div class="model-comparison" id="modelComparison">
+          <div class="model-row"><span>Loading model comparison…</span></div>
+        </div>
+      </div>
     </section>
 
     <section class="panel">
