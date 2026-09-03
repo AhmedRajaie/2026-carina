@@ -109,6 +109,7 @@
     border-radius: 8px;
     padding: 3px;
     gap: 2px;
+    flex-wrap: wrap;
   }
   .segmented-btn {
     background: transparent;
@@ -138,9 +139,9 @@
   .price-panel {
     height: 560px;
   }
-  /* Equity panel needs more vertical room — it holds a chart AND a metrics strip */
+  /* Equity panels need more vertical room — each holds a chart AND a metrics strip */
   .equity-panel {
-    height: 700px;
+    height: 620px;
   }
   .chart-title {
     font-size: 1.05em;
@@ -166,12 +167,12 @@
   }
 
   /* ---------- Metrics ---------- */
-  #metricsPanel {
+  .metrics-panel {
     border-top: 1px solid var(--border);
     padding-top: 16px;
     margin-top: 16px;
   }
-  #metricsPanel h3 {
+  .metrics-panel h3 {
     margin: 0 0 16px;
     font-size: 1.05em;
     font-weight: 600;
@@ -261,11 +262,12 @@
     </div>
   </div>
 
+  <!-- Classic strategies: full-history equity curve, shared date axis -->
   <div class="panel chart-panel equity-panel">
     <div class="chart-header-row">
       <div>
-        <div class="chart-title">Strategy vs. Benchmark</div>
-        <div class="chart-subtitle" id="equityChartSubtitle">SMA crossover strategy, growth of 1,000 EGP</div>
+        <div class="chart-title">Strategy vs. Benchmark — Full History</div>
+        <div class="chart-subtitle" id="equityChartSubtitleClassic">Loading…</div>
       </div>
       <div class="chart-controls">
         <label for="benchmarkSelect">Benchmark</label>
@@ -281,18 +283,59 @@
         </select>
       </div>
     </div>
-    <div class="chart-canvas-wrap equity-canvas-wrap">
-      <canvas id="equityChart"></canvas>
+    <div class="chart-canvas-wrap">
+      <canvas id="equityChartClassic"></canvas>
     </div>
-    <div id="metricsPanel">
+    <div class="metrics-panel" id="metricsPanelClassic">
       <div class="metrics-header-row">
         <h4>Strategy Metrics</h4>
-        <div class="segmented" id="metricsStrategyToggle">
+        <div class="segmented" id="metricsStrategyToggleClassic">
           <button type="button" class="segmented-btn active" data-strategy="mean_reversion">Mean Reversion</button>
           <button type="button" class="segmented-btn" data-strategy="sma">SMA Crossover</button>
         </div>
       </div>
-      <div class="metrics-grid" id="metricsText">
+      <div class="metrics-grid" id="metricsTextClassic">
+        <div class="metric-card"><span class="metric-label">Total Return</span><span class="metric-value neutral">—</span></div>
+        <div class="metric-card"><span class="metric-label">Sharpe Ratio</span><span class="metric-value neutral">—</span></div>
+        <div class="metric-card"><span class="metric-label">Max Drawdown</span><span class="metric-value neutral">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ML strategies: out-of-sample window only, own rebased 1,000 EGP baseline -->
+  <div class="panel chart-panel equity-panel">
+    <div class="chart-header-row">
+      <div>
+        <div class="chart-title">ML Strategy vs. Benchmark</div>
+        <div class="chart-subtitle" id="equityChartSubtitleML">Loading…</div>
+      </div>
+      <div class="chart-controls">
+        <label for="benchmarkSelectML">Benchmark</label>
+        <select id="benchmarkSelectML">
+          <option value="equal_weight">Equal-Weight</option>
+          <option value="egx30">EGX30</option>
+        </select>
+        <label for="commissionSelectML">Commission</label>
+        <select id="commissionSelectML">
+          <option value="0">0%</option>
+          <option value="0.0005">0.05%</option>
+          <option value="0.005" selected>0.5%</option>
+        </select>
+      </div>
+    </div>
+    <div class="chart-canvas-wrap">
+      <canvas id="equityChartML"></canvas>
+    </div>
+    <div class="metrics-panel" id="metricsPanelML">
+      <div class="metrics-header-row">
+        <h4>Strategy Metrics</h4>
+        <div class="segmented" id="metricsStrategyToggleML">
+          <button type="button" class="segmented-btn active" data-strategy="mlp_single">MLP (Single)</button>
+          <button type="button" class="segmented-btn" data-strategy="mlp_universe">MLP (Universe)</button>
+          <button type="button" class="segmented-btn" data-strategy="lstm">LSTM (Universe)</button>
+        </div>
+      </div>
+      <div class="metrics-grid" id="metricsTextML">
         <div class="metric-card"><span class="metric-label">Total Return</span><span class="metric-value neutral">—</span></div>
         <div class="metric-card"><span class="metric-label">Sharpe Ratio</span><span class="metric-value neutral">—</span></div>
         <div class="metric-card"><span class="metric-label">Max Drawdown</span><span class="metric-value neutral">—</span></div>
