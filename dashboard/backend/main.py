@@ -7,15 +7,22 @@ from pathlib import Path
 from typing import Annotated
 
 import numpy as np
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 
+from dashboard.backend.chat_service import ai_dashboard_reply, build_dashboard_context, local_dashboard_reply
+from dashboard.backend.symbol_snapshot import selected_symbol_snapshot
 from tradinglab.backtester import run_backtest
 from tradinglab.data_feed import DataFeed
 from tradinglab.indicators import sma
 from tradinglab.metrics import max_drawdown, sharpe, total_return
 from tradinglab.simulator import PortfolioSimulator
 from tradinglab.strategies.sma import sma_crossover_weights
+
+load_dotenv()
 
 CORE_SYMBOLS = ["COMI", "HRHO", "TMGH", "SWDY", "FWRY"]
 SMA_COMMISSION = 0.005
@@ -34,6 +41,17 @@ MODEL_COMPARE_PATH = Path("dashboard/data/model_compare.json")
 
 app = FastAPI(title="Younit-style trading dashboard")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+
+class ChatMessage(BaseModel):
+    role: str = Field(pattern="^(user|assistant)$")
+    content: str = Field(min_length=1, max_length=2_000)
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=2_000)
+    scope: str = Field(default="core", pattern="^(core|full)$")
+    history: list[ChatMessage] = Field(default_factory=list, max_length=12)
 
 
 def feed_for_scope(scope: str) -> DataFeed:
@@ -307,4 +325,34 @@ def tiktok_signals(
     }
 
 
-# TASK_07+ : add later dashboard endpoints here.
+@app.get("/snapshot/{symbol}")
+def snapshot(symbol: str, scope: str = "core"):
+    """Latest OHLCV snapshot for the symbol currently selected in the dashboard."""
+    return selected_symbol_snapshot(symbol, feed_for_scope(scope).symbols)
+
+
+@app.post("/chat")
+def chat(request: ChatRequest):
+    """Answer dashboard questions using current server-side backtest data."""
+    context = build_dashboard_context(
+        scope=request.scope,
+        sma_metrics=metrics(request.scope),
+        fixed_dollar=tiktok_backtest(),
+        signals=tiktok_signals()["signals"],
+    )
+    history = [message.model_dump() for message in request.history]
+    ai_reply = ai_dashboard_reply(request.message, history, context)
+    return {
+        "reply": ai_reply[0] if ai_reply else local_dashboard_reply(request.message, context),
+        "provider": ai_reply[1] if ai_reply else "dashboard",
+    }
+
+
+# Serve the frontend from the same origin as the API.  Opening index.html directly
+# works in some browsers, but serving it here avoids file-origin and CORS issues.
+# Keep this mount last so the API routes above always take precedence.
+app.mount(
+    "/",
+    StaticFiles(directory="dashboard/frontend", html=True),
+    name="dashboard",
+)

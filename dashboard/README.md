@@ -21,4 +21,16 @@ Later weeks add model diagnostics, agent allocations, and risk panels.
 ```
 uv run uvicorn dashboard.backend.main:app --reload --port 8000
 ```
-Then open `dashboard/frontend/index.html` in your browser.
+Then open [http://localhost:8000](http://localhost:8000) in your browser. The
+backend now serves the dashboard frontend too, so it loads from the same origin
+as the API.
+
+## Dashboard assistant
+
+The floating assistant answers using the dashboard's live backtest metrics,
+fixed-dollar account state, scanner signals, and open positions. It works with a
+local, data-grounded fallback by default. To enable AI-generated wording with
+the free key used in `01-intro_llm_prompting.ipynb`, set `GEMINI_API_KEY` (and
+optionally `GEMINI_MODEL`) in a local `.env` file before starting Uvicorn.
+`OPENAI_API_KEY` remains an optional alternative. Keys stay on the server and
+are never sent to the browser.

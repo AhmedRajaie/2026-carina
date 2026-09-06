@@ -151,6 +151,31 @@
       height: 390px;
     }
 
+    .symbol-snapshot {
+      display: grid;
+      gap: 18px;
+    }
+
+    .snapshot-hero {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .snapshot-symbol { margin: 0 0 5px; font-size: 1.35rem; }
+    .snapshot-meta { color: var(--muted); font-size: 0.82rem; }
+    .snapshot-price { text-align: right; }
+    .snapshot-price-value { font-size: 1.55rem; font-weight: 750; font-variant-numeric: tabular-nums; }
+    .snapshot-change { margin-top: 4px; font-size: 0.86rem; font-weight: 700; }
+    .snapshot-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .snapshot-item { padding: 13px; border: 1px solid var(--border); border-radius: 11px; background: var(--panel-soft); }
+    .snapshot-label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; }
+    .snapshot-value { font-size: 0.98rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .snapshot-status { display: inline-block; margin-top: 10px; padding: 4px 8px; border-radius: 999px; background: rgba(145, 164, 186, 0.14); color: var(--muted); font-size: 0.72rem; font-weight: 700; }
+    .snapshot-loading, .snapshot-error { color: var(--muted); }
+    .snapshot-error { color: #ff7b72; }
+
     .equity-layout {
       display: grid;
       grid-template-columns: minmax(0, 1fr) 220px;
@@ -441,6 +466,8 @@
         grid-template-columns: 1fr;
       }
 
+      .snapshot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
       .strategy-controls {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
@@ -454,6 +481,85 @@
       .metrics {
         grid-template-columns: 1fr;
       }
+
+      .snapshot-hero { flex-direction: column; }
+      .snapshot-price { text-align: left; }
+    }
+
+    .chat-launcher {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 20;
+      display: grid;
+      width: 58px;
+      height: 58px;
+      place-items: center;
+      border: 1px solid rgba(126, 231, 135, 0.5);
+      border-radius: 50%;
+      background: #238636;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.38);
+      font-size: 1.35rem;
+    }
+
+    .chat-launcher:hover { background: #2ea043; }
+
+    .chat-panel {
+      position: fixed;
+      right: 24px;
+      bottom: 94px;
+      z-index: 20;
+      display: grid;
+      width: min(390px, calc(100vw - 32px));
+      height: min(610px, calc(100vh - 120px));
+      grid-template-rows: auto 1fr auto;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: var(--panel);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+    }
+
+    .chat-panel[hidden] { display: none; }
+
+    .chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel-soft);
+    }
+
+    .chat-title { display: grid; gap: 3px; }
+    .chat-title strong { font-size: 0.95rem; }
+    .chat-title span { color: #7ee787; font-size: 0.75rem; }
+    .chat-close { min-height: 32px; padding: 4px 9px; background: transparent; color: var(--muted); font-size: 1.25rem; }
+    .chat-close:hover { background: rgba(145, 164, 186, 0.12); color: var(--text); }
+
+    .chat-body { min-height: 0; overflow-y: auto; padding: 16px; }
+    .chat-messages { display: grid; gap: 12px; }
+    .chat-bubble { max-width: 88%; padding: 10px 12px; border-radius: 13px; color: var(--text); font-size: 0.88rem; line-height: 1.45; white-space: pre-wrap; }
+    .chat-bubble.assistant { justify-self: start; border: 1px solid var(--border); background: var(--panel-soft); border-bottom-left-radius: 4px; }
+    .chat-bubble.user { justify-self: end; background: #1f6feb; border-bottom-right-radius: 4px; }
+    .chat-suggestions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 15px; }
+    .chat-suggestion { min-height: auto; padding: 7px 9px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 0.75rem; font-weight: 500; text-align: left; }
+    .chat-suggestion:hover { background: var(--panel-soft); color: var(--text); }
+    .chat-typing { display: inline-flex; gap: 4px; align-items: center; padding: 10px 12px; color: var(--muted); font-size: 0.8rem; }
+    .chat-typing i { width: 5px; height: 5px; border-radius: 50%; background: var(--muted); animation: chat-pulse 1.1s infinite; }
+    .chat-typing i:nth-child(2) { animation-delay: 0.15s; }.chat-typing i:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes chat-pulse { 50% { opacity: 0.25; transform: translateY(-2px); } }
+
+    .chat-composer { display: grid; gap: 8px; padding: 12px; border-top: 1px solid var(--border); background: var(--panel-soft); }
+    .chat-form { display: flex; gap: 8px; }
+    .chat-input { min-width: 0; flex: 1; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; background: var(--bg); color: var(--text); font: inherit; font-size: 0.86rem; }
+    .chat-send { min-height: 36px; padding: 8px 12px; }
+    .chat-disclaimer { color: var(--muted); font-size: 0.69rem; line-height: 1.3; }
+
+    @media (max-width: 560px) {
+      .chat-launcher { right: 16px; bottom: 16px; }
+      .chat-panel { right: 16px; bottom: 84px; height: min(620px, calc(100vh - 100px)); }
     }
   </style>
 </head>
@@ -499,6 +605,18 @@
         </label>
       </div>
       <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
+    </section>
+
+    <section class="panel" aria-live="polite">
+      <div class="panel-heading">
+        <div>
+          <h2>Selected Symbol Snapshot</h2>
+          <p>Latest recorded market session for the selected symbol</p>
+        </div>
+      </div>
+      <div class="symbol-snapshot" id="symbolSnapshot">
+        <p class="snapshot-loading">Loading selected symbol data…</p>
+      </div>
     </section>
 
     <section class="panel">
@@ -650,7 +768,27 @@
     </section>
   </main>
 
+  <button class="chat-launcher" id="chatLauncher" type="button" aria-label="Open dashboard assistant" aria-expanded="false">✦</button>
+  <aside class="chat-panel" id="chatPanel" aria-label="Trading dashboard assistant" hidden>
+    <div class="chat-header">
+      <div class="chat-title"><strong>Dashboard assistant</strong><span>Live dashboard context</span></div>
+      <button class="chat-close" id="chatClose" type="button" aria-label="Close assistant">×</button>
+    </div>
+    <div class="chat-body" id="chatBody">
+      <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
+      <div class="chat-suggestions" id="chatSuggestions"></div>
+    </div>
+    <div class="chat-composer">
+      <form class="chat-form" id="chatForm">
+        <input class="chat-input" id="chatInput" maxlength="2000" autocomplete="off" placeholder="Ask about this dashboard…" aria-label="Ask the dashboard assistant">
+        <button class="chat-send" id="chatSend" type="submit">Send</button>
+      </form>
+      <p class="chat-disclaimer">Educational information only — not financial advice. Past backtest performance does not guarantee future results.</p>
+    </div>
+  </aside>
+
   <script src="app.js"></script>
+  <script src="chat.js"></script>
 </body>
 
 </html>

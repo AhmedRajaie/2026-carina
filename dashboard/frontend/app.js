@@ -1,5 +1,9 @@
 // Dashboard frontend. Grows via dashboard/tasks/.
-const API = "http://localhost:8000";
+// Use the current site when the dashboard is served by FastAPI.  Retain the
+// localhost API for the documented standalone-file workflow.
+const API = window.location.protocol === "file:"
+  ? "http://localhost:8000"
+  : window.location.origin;
 let priceChart;
 let equityChart;
 let tiktokChart;
@@ -71,6 +75,47 @@ async function drawPriceChart(symbol, scope = currentScope) {
   });
 }
 
+function snapshotNumber(value) {
+  return Number(value).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 3,
+  });
+}
+
+async function loadSymbolSnapshot(symbol, scope = currentScope) {
+  const container = document.getElementById("symbolSnapshot");
+  container.innerHTML = '<p class="snapshot-loading">Loading selected symbol data…</p>';
+  try {
+    const response = await fetch(`${API}/snapshot/${encodeURIComponent(symbol)}?scope=${scope}`);
+    if (!response.ok) throw new Error("Selected symbol data is unavailable.");
+    const data = await response.json();
+    const isPositive = data.change >= 0;
+    const directionClass = isPositive ? "positive" : "negative-text";
+    const direction = isPositive ? "+" : "";
+    container.innerHTML = `
+      <div class="snapshot-hero">
+        <div>
+          <h3 class="snapshot-symbol">${data.symbol}</h3>
+          <p class="snapshot-meta">Last updated: ${data.last_updated}</p>
+          <span class="snapshot-status">${data.market_status}</span>
+        </div>
+        <div class="snapshot-price">
+          <div class="snapshot-price-value">${snapshotNumber(data.price)} EGP</div>
+          <div class="snapshot-change ${directionClass}">${direction}${snapshotNumber(data.change)} EGP (${direction}${data.change_percent.toFixed(2)}%)</div>
+        </div>
+      </div>
+      <div class="snapshot-grid">
+        <div class="snapshot-item"><span class="snapshot-label">Open</span><span class="snapshot-value">${snapshotNumber(data.open)}</span></div>
+        <div class="snapshot-item"><span class="snapshot-label">High</span><span class="snapshot-value positive">${snapshotNumber(data.high)}</span></div>
+        <div class="snapshot-item"><span class="snapshot-label">Low</span><span class="snapshot-value negative-text">${snapshotNumber(data.low)}</span></div>
+        <div class="snapshot-item"><span class="snapshot-label">Previous close</span><span class="snapshot-value">${snapshotNumber(data.previous_close)}</span></div>
+        <div class="snapshot-item"><span class="snapshot-label">Trading volume</span><span class="snapshot-value">${Number(data.volume).toLocaleString()}</span></div>
+      </div>`;
+  } catch (error) {
+    container.innerHTML = `<p class="snapshot-error">${error.message}</p>`;
+  }
+}
+
 async function loadUniverse(scope) {
   const response = await fetch(`${API}/universe?scope=${scope}`);
   const symbols = await response.json();
@@ -87,6 +132,7 @@ async function loadUniverse(scope) {
 
   await Promise.all([
     drawPriceChart(select.value, scope),
+    loadSymbolSnapshot(select.value, scope),
     drawEquityChart(scope),
     loadMetrics(scope),
   ]);
@@ -104,7 +150,10 @@ async function initializeUniverseControls() {
     currentBenchmark = benchmarkSelect.value;
     await drawEquityChart(currentScope, currentBenchmark);
   });
-  symbolSelect.addEventListener("change", () => drawPriceChart(symbolSelect.value));
+  symbolSelect.addEventListener("change", () => {
+    drawPriceChart(symbolSelect.value);
+    loadSymbolSnapshot(symbolSelect.value);
+  });
   await loadUniverse(currentScope);
 }
 
