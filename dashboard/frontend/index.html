@@ -1,19 +1,236 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8"/>
   <title>Trading Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: system-ui, sans-serif; margin: 24px; background:#0b1220; color:#e6edf3; }
-    .panel { background:#111a2b; border-radius:10px; padding:16px; margin-bottom:20px; }
-    h1 { font-weight:600; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0b1220;
+      color: #e6edf3;
+      padding: 24px;
+      min-height: 100vh;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    header h1 { font-size: 1.25rem; font-weight: 600; }
+
+    .header-right { display: flex; align-items: center; gap: 12px; }
+
+    .univ-toggle {
+      display: flex;
+      background: #161f2e;
+      border: 1px solid #1d2d42;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .univ-btn {
+      background: none; border: none; color: #8b949e;
+      font-size: 0.78rem; font-weight: 600; padding: 5px 14px;
+      cursor: pointer; letter-spacing: 0.04em;
+      transition: background 0.15s, color 0.15s;
+    }
+    .univ-btn:hover  { background: #1d2d42; color: #e6edf3; }
+    .univ-btn.active { background: #1d2d42; color: #58a6ff; }
+
+    #status {
+      font-size: 0.8rem; padding: 4px 10px;
+      border-radius: 20px; background: #161f2e; color: #8b949e;
+    }
+    #status.ok  { background: #0d2b1a; color: #3fb950; }
+    #status.err { background: #2b0d0d; color: #f85149; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .panel {
+      background: #111a2b; border: 1px solid #1d2d42;
+      border-radius: 10px; padding: 16px;
+    }
+    .panel.full { grid-column: 1 / -1; }
+
+    .panel-title {
+      font-size: 0.78rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: #8b949e; margin-bottom: 12px;
+      display: flex; align-items: center; gap: 10px;
+    }
+
+    select {
+      background: #0b1220; color: #e6edf3;
+      border: 1px solid #1d2d42; border-radius: 6px;
+      padding: 3px 8px; font-size: 0.8rem; cursor: pointer;
+    }
+    select:focus { outline: none; border-color: #58a6ff; }
+
+    .metrics-strip {
+      display: flex; gap: 24px;
+      margin-bottom: 14px; flex-wrap: wrap;
+    }
+    .metric { display: flex; flex-direction: column; gap: 2px; }
+    .metric-label {
+      font-size: 0.7rem; text-transform: uppercase;
+      letter-spacing: 0.06em; color: #8b949e;
+    }
+    .metric-row { display: flex; gap: 10px; align-items: baseline; }
+    .metric-val { font-size: 1rem; font-weight: 600; }
+    .metric-val.pos { color: #3fb950; }
+    .metric-val.neg { color: #f85149; }
+    .metric-val.neu { color: #e6edf3; }
+    .metric-sub { font-size: 0.72rem; color: #8b949e; }
+
+    /* Heatmap tables */
+    .htable { border-collapse: collapse; font-size: 0.7rem; width: 100%; }
+    .htable th { color: #8b949e; padding: 3px 6px; text-align: center; font-weight: 500; }
+    .htable td { padding: 3px 6px; text-align: center; border-radius: 3px; font-size: 0.68rem; }
+    .htable .row-label { color: #8b949e; text-align: right; padding-right: 8px; white-space: nowrap; }
+
+    /* Trade log table */
+    .trade-table { border-collapse: collapse; width: 100%; font-size: 0.78rem; }
+    .trade-table th { color: #8b949e; padding: 6px 10px; text-align: left;
+                      border-bottom: 1px solid #1d2d42; font-weight: 500; }
+    .trade-table td { padding: 5px 10px; border-bottom: 1px solid #161f2e; }
+    .trade-table tr:hover td { background: #161f2e; }
+    .buy  { color: #3fb950; font-weight: 600; }
+    .sell { color: #f85149; font-weight: 600; }
+
+    /* Comparison & winrate tables */
+    .cmp-table { border-collapse: collapse; width: 100%; font-size: 0.78rem; }
+    .cmp-table th {
+      color: #8b949e; padding: 7px 12px; text-align: right;
+      border-bottom: 1px solid #1d2d42; font-weight: 500;
+    }
+    .cmp-table th:first-child { text-align: left; }
+    .cmp-table td {
+      padding: 6px 12px; text-align: right;
+      border-bottom: 1px solid #161f2e;
+    }
+    .cmp-table td:first-child { text-align: left; color: #e6edf3; font-weight: 500; }
+    .cmp-table tr:hover td { background: #161f2e; }
+    .cmp-table .best { color: #3fb950; font-weight: 700; }
   </style>
 </head>
 <body>
-  <h1>Trading Dashboard</h1>
-  <div class="panel" id="status">connecting…</div>
-  <!-- TASK_02+ : add <canvas> panels for price, indicators, equity curve -->
+
+  <header>
+    <h1>Trading Dashboard</h1>
+    <div class="header-right">
+      <div class="univ-toggle">
+        <button class="univ-btn active" data-univ="core">Core 5</button>
+        <button class="univ-btn"        data-univ="full">Full Market (34)</button>
+      </div>
+      <span id="status">connecting…</span>
+    </div>
+  </header>
+
+  <div class="grid">
+
+    <!-- Price + SMA -->
+    <div class="panel full">
+      <div class="panel-title">
+        Close price &amp; SMA-20
+        <select id="symbolSelect"></select>
+      </div>
+      <canvas id="priceChart" height="90"></canvas>
+    </div>
+
+    <!-- Equity curve -->
+    <div class="panel full">
+      <div class="panel-title">Equity curve — strategies vs benchmarks (1000 EGP start)</div>
+      <div class="metrics-strip" id="metricsStrip"></div>
+      <canvas id="equityChart" height="90"></canvas>
+    </div>
+
+    <!-- ML Models -->
+    <div class="panel full">
+      <div class="panel-title">ML models — LSTM &amp; MLP (test period)</div>
+      <div class="metrics-strip" id="modelMetricsStrip"></div>
+      <canvas id="modelChart" height="90"></canvas>
+    </div>
+
+    <!-- Drawdown -->
+    <div class="panel full">
+      <div class="panel-title">Drawdown — portfolio vs EGX30 benchmark</div>
+      <canvas id="drawdownChart" height="70"></canvas>
+    </div>
+
+    <!-- Rolling Sharpe -->
+    <div class="panel full">
+      <div class="panel-title">Rolling Sharpe (90-day window) — SMA strategy</div>
+      <canvas id="rollingChart" height="70"></canvas>
+    </div>
+
+    <!-- Correlation Heatmap + Monthly Returns side by side -->
+    <div class="panel">
+      <div class="panel-title">Correlation heatmap — daily returns</div>
+      <div id="corrHeatmap" style="overflow-x:auto;"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Monthly returns — SMA strategy (%)</div>
+      <div id="monthlyHeatmap" style="overflow-x:auto;"></div>
+    </div>
+
+    <!-- Trade Log -->
+    <div class="panel full">
+      <div class="panel-title">Trade log — last 50 buy/sell events</div>
+      <div id="tradeLog" style="overflow-x:auto;"></div>
+    </div>
+
+    <!-- Strategy Comparison Table -->
+    <div class="panel full">
+      <div class="panel-title">Strategy comparison — all metrics</div>
+      <div id="comparisonTable" style="overflow-x:auto;"></div>
+    </div>
+
+    <!-- Win Rate + Volatility side by side -->
+    <div class="panel">
+      <div class="panel-title">Win rate &amp; profit factor</div>
+      <div id="winrateTable" style="overflow-x:auto;"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Rolling volatility (30-day annualised)</div>
+      <canvas id="volatilityChart" height="160"></canvas>
+    </div>
+
+    <!-- Strategy Parameters Panel -->
+    <div class="panel full">
+      <div class="panel-title">Strategy parameters — SMA crossover tuner</div>
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:14px;">
+        <label style="font-size:0.82rem;color:#8b949e;">
+          Fast SMA:
+          <input id="paramFast" type="number" value="9" min="2" max="50"
+            style="width:60px;margin-left:6px;background:#0b1220;color:#e6edf3;
+                   border:1px solid #1d2d42;border-radius:6px;padding:3px 8px;font-size:0.82rem;">
+        </label>
+        <label style="font-size:0.82rem;color:#8b949e;">
+          Slow SMA:
+          <input id="paramSlow" type="number" value="20" min="5" max="200"
+            style="width:60px;margin-left:6px;background:#0b1220;color:#e6edf3;
+                   border:1px solid #1d2d42;border-radius:6px;padding:3px 8px;font-size:0.82rem;">
+        </label>
+        <button id="paramRun"
+          style="background:#1d2d42;color:#58a6ff;border:1px solid #1d2d42;
+                 border-radius:6px;padding:5px 18px;font-size:0.82rem;
+                 cursor:pointer;font-weight:600;">
+          Run
+        </button>
+        <div id="paramMetrics" style="font-size:0.8rem;color:#8b949e;"></div>
+      </div>
+      <canvas id="paramChart" height="80"></canvas>
+    </div>
+
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>
