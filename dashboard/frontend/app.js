@@ -8,6 +8,9 @@ let priceChart;
 let equityChart;
 let tiktokChart;
 let modelLossChart;
+let rlChart;
+let leaderboardChart;
+let qagentChart;
 let currentScope = "core";
 let currentBenchmark = "egx30";
 let latestSmaMetrics;
@@ -330,6 +333,72 @@ async function loadModelComparison() {
   `).join("");
 }
 
+function lineChart(canvasId, labels, datasets, title) {
+  return new Chart(document.getElementById(canvasId), {
+    type: "line",
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: { title: { display: true, text: title } },
+      scales: { x: { ticks: { maxTicksLimit: 12 } }, y: { title: { display: true, text: "EGP" } } },
+    },
+  });
+}
+
+function curveDataset(label, data, color, dashed = false) {
+  return { label, data, borderColor: color, borderWidth: 2, borderDash: dashed ? [5, 5] : [], pointRadius: 0, tension: 0.1 };
+}
+
+async function loadRlPanel() {
+  const response = await fetch(`${API}/rl`);
+  if (!response.ok) throw new Error("RL agent data unavailable");
+  const result = await response.json();
+  if (rlChart) rlChart.destroy();
+  rlChart = lineChart("rlChart", result.dates, [
+    curveDataset("PPO agent", result.portfolio, "#3fb950"),
+    curveDataset("EGX30 benchmark", result.benchmark, "#d29922", true),
+  ], "RL agent vs EGX benchmark (test period)");
+  document.getElementById("rlReturn").textContent = `${(result.metrics.total_return * 100).toFixed(1)}%`;
+  document.getElementById("rlSharpe").textContent = result.metrics.sharpe.toFixed(3);
+  document.getElementById("rlDrawdown").textContent = `${(result.metrics.max_drawdown * 100).toFixed(1)}%`;
+}
+
+async function loadLeaderboard() {
+  const response = await fetch(`${API}/leaderboard`);
+  if (!response.ok) throw new Error("Leaderboard data unavailable");
+  const result = await response.json();
+  const colors = { sma: "#58a6ff", mpt: "#bc8cff", agent: "#3fb950", benchmark: "#d29922" };
+  const labels = { sma: "SMA crossover", mpt: "Inverse-vol MPT", agent: "RL agent", benchmark: "EGX30 benchmark" };
+  if (leaderboardChart) leaderboardChart.destroy();
+  leaderboardChart = lineChart("leaderboardChart", result.dates,
+    Object.entries(result.curves).map(([key, values]) => curveDataset(labels[key], values, colors[key], key === "benchmark")),
+    "Leaderboard vs EGX benchmark");
+}
+
+async function loadAllocations() {
+  const response = await fetch(`${API}/allocations`);
+  if (!response.ok) throw new Error("Allocation data unavailable");
+  const result = await response.json();
+  const entries = Object.entries(result.weights).filter(([, weight]) => weight > 0).sort((a, b) => b[1] - a[1]);
+  document.getElementById("allocationSource").textContent = result.source;
+  document.getElementById("allocationList").innerHTML = entries.map(([symbol, weight]) => `
+    <div class="allocation-row"><span>${symbol}</span><div class="allocation-track"><span style="width:${weight * 100}%"></span></div><strong>${(weight * 100).toFixed(1)}%</strong></div>
+  `).join("");
+}
+
+async function loadQagent() {
+  const response = await fetch(`${API}/qagent`);
+  if (!response.ok) throw new Error("Q-agent data unavailable");
+  const result = await response.json();
+  if (qagentChart) qagentChart.destroy();
+  qagentChart = lineChart("qagentChart", result.dates, [
+    curveDataset("Q-agent", result.portfolio, "#f778ba"),
+    curveDataset("Buy and hold", result.benchmark, "#91a4ba", true),
+  ], "Readable Q-agent vs buy-and-hold");
+}
+
 function getTikTokParameters() {
   return {
     lookback: Number(document.getElementById("tiktokLookback").value),
@@ -516,6 +585,10 @@ loadFeatures();
 loadModelComparison().catch((error) => {
   document.getElementById("modelComparison").innerHTML = `<div class="model-row"><span>${error.message}</span></div>`;
 });
+loadRlPanel().catch((error) => { document.getElementById("rlSubtitle").textContent = error.message; });
+loadLeaderboard().catch((error) => { document.getElementById("leaderboardSubtitle").textContent = error.message; });
+loadAllocations().catch((error) => { document.getElementById("allocationSource").textContent = error.message; });
+loadQagent().catch((error) => { document.getElementById("qagentSubtitle").textContent = error.message; });
 initializeTikTokControls();
 loadTikTokStrategy().catch((error) => {
   document.getElementById("tiktokSubtitle").textContent = error.message;

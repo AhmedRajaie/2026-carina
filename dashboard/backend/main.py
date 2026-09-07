@@ -20,6 +20,7 @@ from tradinglab.data_feed import DataFeed
 from tradinglab.indicators import sma
 from tradinglab.metrics import max_drawdown, sharpe, total_return
 from tradinglab.simulator import PortfolioSimulator
+from tradinglab.strategies.mpt import inverse_vol_weights
 from tradinglab.strategies.sma import sma_crossover_weights
 
 load_dotenv()
@@ -38,6 +39,8 @@ feed = DataFeed.from_dir("data/egx", symbols=CORE_SYMBOLS)
 full_market_feed = DataFeed.from_dir("data/egx")
 FEATURES_PATH = Path("dashboard/data/features.json")
 MODEL_COMPARE_PATH = Path("dashboard/data/model_compare.json")
+RL_EQUITY_PATH = Path("dashboard/data/rl_equity.json")
+QAGENT_PATH = Path("dashboard/data/qagent.json")
 
 app = FastAPI(title="Younit-style trading dashboard")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -156,6 +159,73 @@ def model_compare():
     if not MODEL_COMPARE_PATH.exists():
         raise HTTPException(status_code=404, detail="Model comparison data not found")
     return json.loads(MODEL_COMPARE_PATH.read_text(encoding="utf-8"))
+
+
+def stored_curve(path: Path, portfolio_key: str, benchmark_key: str):
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"{path.stem} data not found")
+    data = json.loads(path.read_text(encoding="utf-8"))
+    portfolio = data.get(portfolio_key)
+    benchmark = data.get(benchmark_key)
+    if not portfolio or not benchmark:
+        raise HTTPException(status_code=422, detail=f"Invalid {path.stem} data")
+    length = min(len(portfolio), len(benchmark))
+    dates = full_market_feed.dates[-length:]
+    return {
+        "dates": dates.strftime("%Y-%m-%d").tolist(),
+        "portfolio": [float(value) * 1000 for value in portfolio[-length:]],
+        "benchmark": [float(value) * 1000 for value in benchmark[-length:]],
+    }
+
+
+@app.get("/rl")
+def rl_equity():
+    result = stored_curve(RL_EQUITY_PATH, "agent", "benchmark")
+    returns = np.zeros(len(result["portfolio"]))
+    returns[1:] = np.asarray(result["portfolio"][1:]) / np.asarray(result["portfolio"][:-1]) - 1
+    result["metrics"] = {
+        "total_return": round(total_return(returns), 3),
+        "sharpe": round(sharpe(returns), 3),
+        "max_drawdown": round(max_drawdown(returns), 3),
+    }
+    return result
+
+
+@lru_cache(maxsize=1)
+def run_mpt_backtest():
+    simulator = PortfolioSimulator(full_market_feed, benchmark="egx30", commission=SMA_COMMISSION)
+    return run_backtest(simulator, strategy=inverse_vol_weights, lookback=30)
+
+
+@app.get("/leaderboard")
+def leaderboard():
+    sma_result = run_sma_backtest("full", "egx30")
+    mpt_result = run_mpt_backtest()
+    rl_result = rl_equity()
+    length = min(len(rl_result["dates"]), len(sma_result["dates"]))
+    dates = sma_result["dates"][-length:]
+    curves = {
+        "sma": (sma_result["portfolio"][-length:] * 1000).tolist(),
+        "mpt": (mpt_result["portfolio"][-length:] * 1000).tolist(),
+        "agent": rl_result["portfolio"][-length:],
+        "benchmark": (sma_result["benchmark"][-length:] * 1000).tolist(),
+    }
+    return {"dates": dates.strftime("%Y-%m-%d").tolist(), "curves": curves}
+
+
+@app.get("/allocations")
+def allocations():
+    observation = np.expand_dims(full_market_feed.returns[-30:], axis=-1).transpose(1, 0, 2)
+    weights = inverse_vol_weights(observation)
+    return {
+        "source": "latest inverse-volatility allocation (RL weights were not exported)",
+        "weights": {symbol: round(float(weight), 4) for symbol, weight in zip(full_market_feed.symbols, weights)},
+    }
+
+
+@app.get("/qagent")
+def qagent():
+    return stored_curve(QAGENT_PATH, "portfolio", "benchmark")
 
 
 @lru_cache(maxsize=32)

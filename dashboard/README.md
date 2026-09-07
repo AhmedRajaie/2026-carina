@@ -19,7 +19,7 @@ Later weeks add model diagnostics, agent allocations, and risk panels.
 
 ## Run it
 ```
-uv run uvicorn dashboard.backend.main:app --reload --port 8000
+uv run uvicorn dashboard.backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
 Then open [http://localhost:8000](http://localhost:8000) in your browser. The
 backend now serves the dashboard frontend too, so it loads from the same origin
