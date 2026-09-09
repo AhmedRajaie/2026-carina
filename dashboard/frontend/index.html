@@ -2,126 +2,333 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <title>Trading Dashboard</title>
+  <title>EGX Trading Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@0.2.1/dist/chartjs-chart-financial.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1/dist/chartjs-adapter-luxon.umd.min.js"></script>
   <style>
+    /* ── Reset & tokens ───────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --bg:          #0d0b1a;
+      --bg-card:     #13102a;
+      --bg-elevated: #1a1640;
+      --border:      #1e1a3d;
+      --border-gold: #c9a84c33;
+      --accent:      #c9a84c;
+      --accent-dim:  #c9a84c88;
+      --blue:        #4a9eff;
+      --green:       #00c896;
+      --red:         #ff4d6d;
+      --purple:      #a78bfa;
+      --orange:      #ff9f43;
+      --text-1:      #e8edf5;
+      --text-2:      #8da0b8;
+      --text-3:      #4a6080;
+      --mono:        'JetBrains Mono', monospace;
+    }
+
     body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background: #0b1220;
-      color: #e6edf3;
-      padding: 24px;
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text-1);
       min-height: 100vh;
     }
 
+    /* ── Header ───────────────────────────────────────────────────────────── */
     header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 20px;
-      gap: 12px;
+      padding: 14px 28px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-gold);
+      gap: 16px;
       flex-wrap: wrap;
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
-    header h1 { font-size: 1.25rem; font-weight: 600; }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), #e8c97a);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+    .logo-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-1);
+      letter-spacing: 0.02em;
+    }
+    .logo-sub {
+      font-size: 0.65rem;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
 
     .header-right { display: flex; align-items: center; gap: 12px; }
 
+    /* Universe toggle */
     .univ-toggle {
       display: flex;
-      background: #161f2e;
-      border: 1px solid #1d2d42;
+      background: var(--bg);
+      border: 1px solid var(--border);
       border-radius: 8px;
       overflow: hidden;
     }
     .univ-btn {
-      background: none; border: none; color: #8b949e;
-      font-size: 0.78rem; font-weight: 600; padding: 5px 14px;
-      cursor: pointer; letter-spacing: 0.04em;
-      transition: background 0.15s, color 0.15s;
+      background: none; border: none;
+      color: var(--text-2);
+      font-family: inherit;
+      font-size: 0.75rem; font-weight: 600;
+      padding: 5px 14px;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: all 0.15s;
     }
-    .univ-btn:hover  { background: #1d2d42; color: #e6edf3; }
-    .univ-btn.active { background: #1d2d42; color: #58a6ff; }
+    .univ-btn:hover  { background: var(--bg-elevated); color: var(--text-1); }
+    .univ-btn.active { background: var(--bg-elevated); color: var(--accent); }
 
+    /* Status pill */
     #status {
-      font-size: 0.8rem; padding: 4px 10px;
-      border-radius: 20px; background: #161f2e; color: #8b949e;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: var(--bg);
+      color: var(--text-2);
+      border: 1px solid var(--border);
     }
-    #status.ok  { background: #0d2b1a; color: #3fb950; }
-    #status.err { background: #2b0d0d; color: #f85149; }
+    #status.ok  { background: #00c89610; color: var(--green); border-color: #00c89640; }
+    #status.err { background: #ff4d6d10; color: var(--red);   border-color: #ff4d6d40; }
+
+    /* ── Layout ───────────────────────────────────────────────────────────── */
+    .page { padding: 24px 28px; }
 
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
     .panel {
-      background: #111a2b; border: 1px solid #1d2d42;
-      border-radius: 10px; padding: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--border-gold);
+      border-radius: 10px;
+      padding: 18px;
+      transition: border-color 0.2s;
     }
-    .panel.full { grid-column: 1 / -1; }
+    .panel:hover { border-color: var(--border-gold); }
+    .panel.full  { grid-column: 1 / -1; }
 
+    /* ── Panel title ──────────────────────────────────────────────────────── */
     .panel-title {
-      font-size: 0.78rem; font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.06em;
-      color: #8b949e; margin-bottom: 12px;
-      display: flex; align-items: center; gap: 10px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-title::before {
+      content: '';
+      display: inline-block;
+      width: 3px; height: 12px;
+      background: var(--accent);
+      border-radius: 2px;
+      flex-shrink: 0;
     }
 
+    /* ── Controls ─────────────────────────────────────────────────────────── */
     select {
-      background: #0b1220; color: #e6edf3;
-      border: 1px solid #1d2d42; border-radius: 6px;
-      padding: 3px 8px; font-size: 0.8rem; cursor: pointer;
+      background: var(--bg);
+      color: var(--text-1);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-family: inherit;
+      font-size: 0.78rem;
+      cursor: pointer;
     }
-    select:focus { outline: none; border-color: #58a6ff; }
+    select:focus { outline: none; border-color: var(--accent-dim); }
 
-    .metrics-strip {
-      display: flex; gap: 24px;
-      margin-bottom: 14px; flex-wrap: wrap;
+    .chart-toggle {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text-2);
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.03em;
     }
-    .metric { display: flex; flex-direction: column; gap: 2px; }
+    .chart-toggle.active { background: var(--bg-elevated); color: var(--accent); border-color: var(--accent-dim); }
+    .chart-toggle:hover  { background: var(--bg-elevated); color: var(--text-1); }
+
+    .export-btn {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text-3);
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-family: inherit;
+      font-size: 0.72rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .export-btn:hover { background: var(--bg-elevated); color: var(--green); border-color: #00c89640; }
+
+    .param-input {
+      width: 64px;
+      background: var(--bg);
+      color: var(--text-1);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+    }
+    .param-input:focus { outline: none; border-color: var(--accent-dim); }
+
+    .run-btn {
+      background: linear-gradient(135deg, var(--accent), #e8c97a);
+      color: #060d18;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 20px;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: opacity 0.15s;
+    }
+    .run-btn:hover { opacity: 0.85; }
+
+    /* ── Metrics strip ────────────────────────────────────────────────────── */
+    .metrics-strip {
+      display: flex;
+      gap: 28px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      padding: 12px 14px;
+      background: var(--bg);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .metric { display: flex; flex-direction: column; gap: 3px; }
     .metric-label {
-      font-size: 0.7rem; text-transform: uppercase;
-      letter-spacing: 0.06em; color: #8b949e;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-3);
+      font-weight: 600;
     }
     .metric-row { display: flex; gap: 10px; align-items: baseline; }
-    .metric-val { font-size: 1rem; font-weight: 600; }
-    .metric-val.pos { color: #3fb950; }
-    .metric-val.neg { color: #f85149; }
-    .metric-val.neu { color: #e6edf3; }
-    .metric-sub { font-size: 0.72rem; color: #8b949e; }
+    .metric-val {
+      font-family: var(--mono);
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    .metric-val.pos { color: var(--green); }
+    .metric-val.neg { color: var(--red); }
+    .metric-val.neu { color: var(--text-1); }
+    .metric-sub { font-size: 0.68rem; color: var(--text-3); font-family: var(--mono); }
 
-    /* Heatmap tables */
-    .htable { border-collapse: collapse; font-size: 0.7rem; width: 100%; }
-    .htable th { color: #8b949e; padding: 3px 6px; text-align: center; font-weight: 500; }
-    .htable td { padding: 3px 6px; text-align: center; border-radius: 3px; font-size: 0.68rem; }
-    .htable .row-label { color: #8b949e; text-align: right; padding-right: 8px; white-space: nowrap; }
+    /* ── Tables ───────────────────────────────────────────────────────────── */
+    .htable { border-collapse: collapse; font-size: 0.68rem; width: 100%; }
+    .htable th {
+      color: var(--text-3); padding: 4px 7px;
+      text-align: center; font-weight: 600;
+      letter-spacing: 0.05em; text-transform: uppercase;
+    }
+    .htable td { padding: 3px 7px; text-align: center; border-radius: 3px; font-family: var(--mono); }
+    .htable .row-label {
+      color: var(--text-2); text-align: right;
+      padding-right: 10px; white-space: nowrap;
+      font-weight: 600; font-family: inherit;
+    }
 
-    /* Trade log table */
     .trade-table { border-collapse: collapse; width: 100%; font-size: 0.78rem; }
-    .trade-table th { color: #8b949e; padding: 6px 10px; text-align: left;
-                      border-bottom: 1px solid #1d2d42; font-weight: 500; }
-    .trade-table td { padding: 5px 10px; border-bottom: 1px solid #161f2e; }
-    .trade-table tr:hover td { background: #161f2e; }
-    .buy  { color: #3fb950; font-weight: 600; }
-    .sell { color: #f85149; font-weight: 600; }
+    .trade-table th {
+      color: var(--text-3); padding: 7px 12px; text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-weight: 600; font-size: 0.68rem;
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .trade-table td {
+      padding: 6px 12px;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--mono); font-size: 0.76rem;
+    }
+    .trade-table tr:hover td { background: var(--bg-elevated); }
+    .buy  { color: var(--green); font-weight: 700; }
+    .sell { color: var(--red);   font-weight: 700; }
 
-    /* Comparison & winrate tables */
     .cmp-table { border-collapse: collapse; width: 100%; font-size: 0.78rem; }
     .cmp-table th {
-      color: #8b949e; padding: 7px 12px; text-align: right;
-      border-bottom: 1px solid #1d2d42; font-weight: 500;
+      color: var(--text-3); padding: 8px 14px; text-align: right;
+      border-bottom: 1px solid var(--border);
+      font-weight: 600; font-size: 0.68rem;
+      text-transform: uppercase; letter-spacing: 0.08em;
     }
     .cmp-table th:first-child { text-align: left; }
     .cmp-table td {
-      padding: 6px 12px; text-align: right;
-      border-bottom: 1px solid #161f2e;
+      padding: 7px 14px; text-align: right;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--mono); font-size: 0.76rem;
+      color: var(--text-2);
     }
-    .cmp-table td:first-child { text-align: left; color: #e6edf3; font-weight: 500; }
-    .cmp-table tr:hover td { background: #161f2e; }
-    .cmp-table .best { color: #3fb950; font-weight: 700; }
+    .cmp-table td:first-child {
+      text-align: left;
+      color: var(--text-1);
+      font-family: inherit;
+      font-weight: 600;
+    }
+    .cmp-table tr:hover td { background: var(--bg-elevated); }
+    .cmp-table .best { color: var(--green); font-weight: 700; }
+
+    /* ── Scrollbar ────────────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>Trading Dashboard</h1>
+    <div class="logo">
+      <div class="logo-icon">📈</div>
+      <div class="logo-text">
+        <span class="logo-title">EGX Trading Dashboard</span>
+        <span class="logo-sub">Quantitative Research</span>
+      </div>
+    </div>
     <div class="header-right">
       <div class="univ-toggle">
         <button class="univ-btn active" data-univ="core">Core 5</button>
@@ -131,15 +338,22 @@
     </div>
   </header>
 
+  <div class="page">
   <div class="grid">
 
-    <!-- Price + SMA -->
+    <!-- Price + SMA / Candlestick -->
     <div class="panel full">
       <div class="panel-title">
-        Close price &amp; SMA-20
+        Price chart
         <select id="symbolSelect"></select>
+        <div style="margin-left:auto;display:flex;gap:8px;">
+          <button class="chart-toggle active" id="btnLine" onclick="setChartMode('line')">Line</button>
+          <button class="chart-toggle" id="btnCandle" onclick="setChartMode('candle')">Candlestick</button>
+          <button class="export-btn" onclick="exportEquityCSV()">⬇ Export Equity CSV</button>
+          <button class="export-btn" onclick="exportTradeCSV()">⬇ Export Trades CSV</button>
+        </div>
       </div>
-      <canvas id="priceChart" height="90"></canvas>
+      <canvas id="priceChart" height="100"></canvas>
     </div>
 
     <!-- Equity curve -->
@@ -156,10 +370,16 @@
       <canvas id="modelChart" height="90"></canvas>
     </div>
 
+    <!-- Risk/Return Scatter + Drawdown side by side -->
+    <div class="panel">
+      <div class="panel-title">Risk / Return — all strategies</div>
+      <canvas id="scatterChart" height="200"></canvas>
+    </div>
+
     <!-- Drawdown -->
-    <div class="panel full">
+    <div class="panel">
       <div class="panel-title">Drawdown — portfolio vs EGX30 benchmark</div>
-      <canvas id="drawdownChart" height="70"></canvas>
+      <canvas id="drawdownChart" height="200"></canvas>
     </div>
 
     <!-- Rolling Sharpe -->
@@ -206,31 +426,213 @@
     <div class="panel full">
       <div class="panel-title">Strategy parameters — SMA crossover tuner</div>
       <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:14px;">
-        <label style="font-size:0.82rem;color:#8b949e;">
+        <label style="font-size:0.82rem;color:var(--text-2);">
           Fast SMA:
-          <input id="paramFast" type="number" value="9" min="2" max="50"
-            style="width:60px;margin-left:6px;background:#0b1220;color:#e6edf3;
-                   border:1px solid #1d2d42;border-radius:6px;padding:3px 8px;font-size:0.82rem;">
+          <input id="paramFast" type="number" value="9" min="2" max="50" class="param-input" style="margin-left:6px;">
         </label>
-        <label style="font-size:0.82rem;color:#8b949e;">
+        <label style="font-size:0.82rem;color:var(--text-2);">
           Slow SMA:
-          <input id="paramSlow" type="number" value="20" min="5" max="200"
-            style="width:60px;margin-left:6px;background:#0b1220;color:#e6edf3;
-                   border:1px solid #1d2d42;border-radius:6px;padding:3px 8px;font-size:0.82rem;">
+          <input id="paramSlow" type="number" value="20" min="5" max="200" class="param-input" style="margin-left:6px;">
         </label>
-        <button id="paramRun"
-          style="background:#1d2d42;color:#58a6ff;border:1px solid #1d2d42;
-                 border-radius:6px;padding:5px 18px;font-size:0.82rem;
-                 cursor:pointer;font-weight:600;">
-          Run
-        </button>
-        <div id="paramMetrics" style="font-size:0.8rem;color:#8b949e;"></div>
+        <button id="paramRun" class="run-btn">▶ Run</button>
+        <div id="paramMetrics" style="font-size:0.8rem;color:var(--text-2);font-family:var(--mono);"></div>
       </div>
       <canvas id="paramChart" height="80"></canvas>
     </div>
 
   </div>
+  </div>
 
   <script src="app.js"></script>
+
+  <!-- ── Floating Chatbot ─────────────────────────────────────────────────── -->
+  <div id="chatWidget">
+
+    <!-- Toggle button -->
+    <button id="chatToggle" onclick="toggleChat()" title="AI Assistant">
+      <span id="chatIcon">💬</span>
+    </button>
+
+    <!-- Chat window -->
+    <div id="chatWindow">
+      <div id="chatHeader">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:1.1rem;">🤖</span>
+          <div>
+            <div style="font-weight:700;font-size:0.85rem;">EGX AI Assistant</div>
+            <div style="font-size:0.65rem;color:var(--accent);letter-spacing:0.05em;">Powered by Gemini</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button onclick="clearChat()"
+            style="background:none;border:1px solid var(--border);color:var(--text-3);
+                   cursor:pointer;font-size:0.65rem;padding:3px 8px;border-radius:6px;
+                   font-family:inherit;">
+            مسح
+          </button>
+          <button onclick="toggleChat()" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:1.1rem;">✕</button>
+        </div>
+      </div>
+
+      <div id="chatMessages">
+        <div class="msg bot">
+          مرحباً! أنا مساعدك لتحليل بيانات البورصة المصرية.<br>
+          اسألني عن أي استراتيجية أو سهم أو مقياس في الداشبورد. 📊
+        </div>
+      </div>
+
+      <!-- Quick questions -->
+      <div id="quickQuestions" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px;border-top:1px solid var(--border);"></div>
+
+      <div id="chatInputArea">
+        <input id="chatInput" type="text"
+          placeholder="اسأل عن الداشبورد…"
+          onkeydown="if(event.key==='Enter') sendChat()"/>
+        <button id="chatSend" onclick="sendChat()">▶</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    #chatWidget {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 9999;
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+
+    #chatToggle {
+      width: 54px; height: 54px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #e8c97a);
+      border: none;
+      cursor: pointer;
+      font-size: 1.4rem;
+      box-shadow: 0 4px 20px #c9a84c44;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #chatToggle:hover {
+      transform: scale(1.08);
+      box-shadow: 0 6px 28px #c9a84c66;
+    }
+
+    #chatWindow {
+      display: none;
+      flex-direction: column;
+      position: absolute;
+      bottom: 66px;
+      right: 0;
+      width: 360px;
+      height: 500px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-gold);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 40px #00000088;
+    }
+    #chatWindow.open { display: flex; }
+
+    #chatHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border-gold);
+    }
+
+    #chatMessages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .msg {
+      max-width: 85%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+    .msg.bot {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-1);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    .msg.user {
+      background: linear-gradient(135deg, #c9a84c22, #c9a84c11);
+      border: 1px solid var(--border-gold);
+      color: var(--text-1);
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+      text-align: right;
+    }
+    .msg.thinking {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-3);
+      align-self: flex-start;
+      font-style: italic;
+    }
+
+    #chatInputArea {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+    #chatInput {
+      flex: 1;
+      background: var(--bg);
+      color: var(--text-1);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-family: inherit;
+      font-size: 0.82rem;
+      direction: rtl;
+    }
+    #chatInput:focus { outline: none; border-color: var(--accent-dim); }
+    #chatSend {
+      background: linear-gradient(135deg, var(--accent), #e8c97a);
+      color: #060d18;
+      border: none;
+      border-radius: 8px;
+      width: 36px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      font-weight: 700;
+      transition: opacity 0.15s;
+    }
+    #chatSend:hover { opacity: 0.85; }
+    #chatSend:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .quick-q {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text-2);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-family: inherit;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .quick-q:hover {
+      background: var(--bg-elevated);
+      color: var(--accent);
+      border-color: var(--accent-dim);
+    }
+  </style>
 </body>
 </html>

@@ -12,10 +12,10 @@ const CHART_DEFAULTS = {
   animation: false,
   responsive: true,
   scales: {
-    x: { ticks: { color: "#8b949e", maxTicksLimit: 10, maxRotation: 0 }, grid: { color: "#21262d" } },
-    y: { ticks: { color: "#8b949e" }, grid: { color: "#21262d" } },
+    x: { ticks: { color: "#8da0b8", maxTicksLimit: 10, maxRotation: 0, font: { size: 11 } }, grid: { color: "#152035" } },
+    y: { ticks: { color: "#8da0b8", font: { size: 11 } }, grid: { color: "#152035" } },
   },
-  plugins: { legend: { labels: { color: "#e6edf3" } } },
+  plugins: { legend: { labels: { color: "#e8edf5", font: { size: 11 }, usePointStyle: true, pointStyleWidth: 10 } } },
 };
 
 function pct(v)      { return (v * 100).toFixed(1) + "%"; }
@@ -34,30 +34,74 @@ async function checkHealth() {
   }
 }
 
-// ── Price + SMA ───────────────────────────────────────────────────────────────
+// ── Chart mode (line / candlestick) ──────────────────────────────────────────
+let chartMode    = "line";
+let currentSymbol = "";
+
+function setChartMode(mode) {
+  chartMode = mode;
+  document.getElementById("btnLine").classList.toggle("active",   mode === "line");
+  document.getElementById("btnCandle").classList.toggle("active", mode === "candle");
+  loadPriceChart(currentSymbol);
+}
+
+// ── Price chart (line + SMA or candlestick) ───────────────────────────────────
 let priceChart = null;
 
 async function loadPriceChart(symbol) {
-  const [pr, ir] = await Promise.all([
-    fetch(`${API}/prices/${symbol}${qs()}`),
-    fetch(`${API}/indicators/${symbol}${qs({ window: 20 })}`),
-  ]);
-  const { dates, close } = await pr.json();
-  const { sma }          = await ir.json();
-
+  currentSymbol = symbol;
   const ctx = document.getElementById("priceChart").getContext("2d");
   if (priceChart) priceChart.destroy();
-  priceChart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: dates,
-      datasets: [
-        { label: symbol,   data: close, borderColor: "#58a6ff", borderWidth: 1.5, pointRadius: 0, tension: 0.1 },
-        { label: "SMA 20", data: sma,   borderColor: "#f0883e", borderWidth: 1.5, pointRadius: 0, tension: 0.1, spanGaps: false },
-      ],
-    },
-    options: { ...CHART_DEFAULTS },
-  });
+
+  if (chartMode === "candle") {
+    const r = await fetch(`${API}/ohlc/${symbol}${qs()}`);
+    if (!r.ok) return;
+    const { dates, open, high, low, close } = await r.json();
+
+    const data = dates.map((d, i) => ({
+      x: new Date(d).getTime(),
+      o: open[i], h: high[i], l: low[i], c: close[i],
+    })).filter(d => d.o !== null);
+
+    priceChart = new Chart(ctx, {
+      type: "candlestick",
+      data: {
+        datasets: [{
+          label: symbol,
+          data,
+          color: { up: "#3fb950", down: "#f85149", unchanged: "#8b949e" },
+        }],
+      },
+      options: {
+        animation: false,
+        responsive: true,
+        scales: {
+          x: { type: "time", time: { unit: "month" }, ticks: { color: "#8b949e" }, grid: { color: "#21262d" } },
+          y: { ticks: { color: "#8b949e" }, grid: { color: "#21262d" } },
+        },
+        plugins: { legend: { labels: { color: "#e6edf3" } } },
+      },
+    });
+  } else {
+    const [pr, ir] = await Promise.all([
+      fetch(`${API}/prices/${symbol}${qs()}`),
+      fetch(`${API}/indicators/${symbol}${qs({ window: 20 })}`),
+    ]);
+    const { dates, close } = await pr.json();
+    const { sma }          = await ir.json();
+
+    priceChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: dates,
+        datasets: [
+          { label: symbol,   data: close, borderColor: "#58a6ff", borderWidth: 1.5, pointRadius: 0, tension: 0.1 },
+          { label: "SMA 20", data: sma,   borderColor: "#f0883e", borderWidth: 1.5, pointRadius: 0, tension: 0.1, spanGaps: false },
+        ],
+      },
+      options: { ...CHART_DEFAULTS },
+    });
+  }
 }
 
 // ── Metrics strip ─────────────────────────────────────────────────────────────
@@ -180,7 +224,12 @@ async function switchUniverse(univ) {
     loadCorrHeatmap(),
     loadMonthlyHeatmap(),
     loadTradeLog(),
+    loadComparisonTable(),
+    loadWinrateTable(),
+    loadVolatilityChart(),
+    loadScatterChart(),
   ]);
+  await runCustomBacktest();
 }
 
 // ── Drawdown chart ────────────────────────────────────────────────────────────
@@ -326,6 +375,89 @@ async function loadTradeLog() {
   document.getElementById("tradeLog").innerHTML = html;
 }
 
+// ── Risk/Return Scatter ───────────────────────────────────────────────────────
+let scatterChart = null;
+
+async function loadScatterChart() {
+  const r = await fetch(`${API}/scatter${qs()}`);
+  if (!r.ok) return;
+  const { points } = await r.json();
+
+  const ctx = document.getElementById("scatterChart").getContext("2d");
+  if (scatterChart) scatterChart.destroy();
+
+  scatterChart = new Chart(ctx, {
+    type: "scatter",
+    data: {
+      datasets: points.map(p => ({
+        label:           p.label,
+        data:            [{ x: p.x, y: p.y }],
+        backgroundColor: p.color,
+        borderColor:     p.color,
+        pointRadius:     8,
+        pointHoverRadius:10,
+      })),
+    },
+    options: {
+      animation: false,
+      responsive: true,
+      scales: {
+        x: {
+          title: { display: true, text: "Volatility % (ann.)", color: "#8b949e" },
+          ticks: { color: "#8b949e" }, grid: { color: "#21262d" },
+        },
+        y: {
+          title: { display: true, text: "Ann. Return %", color: "#8b949e" },
+          ticks: { color: "#8b949e" }, grid: { color: "#21262d" },
+        },
+      },
+      plugins: {
+        legend: { labels: { color: "#e6edf3", usePointStyle: true } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const p = points[ctx.datasetIndex];
+              return `${p.label} — Return: ${p.y}%  Vol: ${p.x}%  Sharpe: ${p.sharpe}`;
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+// ── CSV Export ────────────────────────────────────────────────────────────────
+function downloadCSV(filename, rows) {
+  const csv  = rows.map(r => r.join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function exportEquityCSV() {
+  const r = await fetch(`${API}/backtest${qs()}`);
+  if (!r.ok) return;
+  const { dates, portfolio, portfolio_net, tiktok, benchmark, equal_weight } = await r.json();
+  const rows = [
+    ["date","sma_gross","sma_net","tiktok","egx30","equal_weight"],
+    ...dates.map((d, i) => [d, portfolio[i], portfolio_net[i], tiktok[i], benchmark[i], equal_weight[i]]),
+  ];
+  downloadCSV(`equity_${activeUniverse}_${new Date().toISOString().slice(0,10)}.csv`, rows);
+}
+
+async function exportTradeCSV() {
+  const r = await fetch(`${API}/trades${qs({ max_rows: 10000 })}`);
+  if (!r.ok) return;
+  const { trades } = await r.json();
+  const rows = [
+    ["date","symbol","action","price"],
+    ...trades.map(t => [t.date, t.symbol, t.action, t.price ?? ""]),
+  ];
+  downloadCSV(`trades_${activeUniverse}_${new Date().toISOString().slice(0,10)}.csv`, rows);
+}
+
 // ── Strategy Comparison Table ─────────────────────────────────────────────────
 async function loadComparisonTable() {
   const r = await fetch(`${API}/comparison${qs()}`);
@@ -464,6 +596,7 @@ async function init() {
     btn.addEventListener("click", () => switchUniverse(btn.dataset.univ)));
   document.getElementById("symbolSelect").addEventListener("change", e =>
     loadPriceChart(e.target.value));
+  document.getElementById("paramRun").addEventListener("click", runCustomBacktest);
 
   const first = await refreshSymbolDropdown();
   await Promise.all([
@@ -475,7 +608,114 @@ async function init() {
     loadCorrHeatmap(),
     loadMonthlyHeatmap(),
     loadTradeLog(),
+    loadComparisonTable(),
+    loadWinrateTable(),
+    loadVolatilityChart(),
+    loadScatterChart(),
   ]);
+  // Run default params chart
+  await runCustomBacktest();
+  renderQuickQuestions();
 }
 
 init();
+
+// ── Chatbot ───────────────────────────────────────────────────────────────────
+const QUICK_QUESTIONS = [
+  "إيه أحسن استراتيجية؟",
+  "قارن بين SMA و TikTok",
+  "إيه تأثير الـ commission؟",
+  "إيه معنى الـ Sharpe ratio؟",
+  "أنهي سهم الأفضل؟",
+  "فسرلي الـ Max Drawdown",
+];
+
+// Chat history stored in memory
+let chatHistory = [];
+
+function toggleChat() {
+  const win = document.getElementById("chatWindow");
+  win.classList.toggle("open");
+  if (win.classList.contains("open")) {
+    document.getElementById("chatInput").focus();
+  }
+}
+
+function appendMsg(text, role) {
+  const messages = document.getElementById("chatMessages");
+  const div = document.createElement("div");
+  div.className = `msg ${role}`;
+  // Render markdown-style bold (**text**)
+  div.innerHTML = text
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\n/g, "<br>");
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+  return div;
+}
+
+function renderQuickQuestions() {
+  const container = document.getElementById("quickQuestions");
+  if (!container) return;
+  container.innerHTML = QUICK_QUESTIONS.map(q => `
+    <button class="quick-q" onclick="askQuick('${q}')">${q}</button>
+  `).join("");
+}
+
+function askQuick(question) {
+  document.getElementById("chatInput").value = question;
+  sendChat();
+}
+
+async function sendChat() {
+  const input = document.getElementById("chatInput");
+  const btn   = document.getElementById("chatSend");
+  const msg   = input.value.trim();
+  if (!msg) return;
+
+  input.value  = "";
+  btn.disabled = true;
+
+  // Hide quick questions after first message
+  const qq = document.getElementById("quickQuestions");
+  if (qq) qq.style.display = "none";
+
+  appendMsg(msg, "user");
+  const thinking = appendMsg("جاري التفكير…", "thinking");
+
+  // Add to history
+  chatHistory.push({ role: "user", text: msg });
+
+  try {
+    const r = await fetch(`${API}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message:  msg,
+        universe: activeUniverse,
+        history:  chatHistory.slice(-10),
+      }),
+    });
+    const { reply } = await r.json();
+    thinking.remove();
+    appendMsg(reply, "bot");
+    chatHistory.push({ role: "bot", text: reply });
+  } catch (e) {
+    thinking.remove();
+    appendMsg("حدث خطأ — تأكد إن الـ backend شغال.", "bot");
+  } finally {
+    btn.disabled = false;
+    input.focus();
+  }
+}
+
+function clearChat() {
+  chatHistory = [];
+  const messages = document.getElementById("chatMessages");
+  messages.innerHTML = `<div class="msg bot">
+    مرحباً! أنا مساعدك لتحليل بيانات البورصة المصرية.<br>
+    اسألني عن أي استراتيجية أو سهم أو مقياس في الداشبورد. 📊
+  </div>`;
+  const qq = document.getElementById("quickQuestions");
+  if (qq) qq.style.display = "flex";
+}

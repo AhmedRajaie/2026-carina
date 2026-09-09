@@ -430,3 +430,181 @@ def backtest_custom(universe: str = U, fast: int = 9, slow: int = 20):
         },
         "params": {"fast": fast, "slow": slow},
     }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CANDLESTICK + SCATTER
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/ohlc/{symbol}")
+def ohlc(symbol: str, universe: str = U):
+    """OHLC data for candlestick chart."""
+    feed   = _get(universe)["feed"]
+    symbol = symbol.upper()
+    if symbol not in feed.symbols:
+        raise HTTPException(status_code=404, detail=f"Unknown symbol '{symbol}'.")
+
+    idx   = feed.symbols.index(symbol)
+    dates = [d.strftime("%Y-%m-%d") for d in feed.dates]
+
+    # Read raw CSV for open/high/low
+    from pathlib import Path
+    import pandas as pd_
+    csv_path = Path("data/egx") / f"{symbol}.csv"
+    df = pd_.read_csv(csv_path, parse_dates=["date"]).set_index("date").sort_index()
+
+    # Align to feed dates (intersection)
+    feed_dates = pd_.DatetimeIndex(feed.dates)
+    df = df.reindex(feed_dates)
+
+    price_col = "adj_close" if "adj_close" in df.columns else "close"
+    return {
+        "dates":  dates,
+        "open":   [None if pd_.isna(v) else round(float(v), 4) for v in df["open"]],
+        "high":   [None if pd_.isna(v) else round(float(v), 4) for v in df["high"]],
+        "low":    [None if pd_.isna(v) else round(float(v), 4) for v in df["low"]],
+        "close":  [None if pd_.isna(v) else round(float(v), 4) for v in df[price_col]],
+        "volume": [None if pd_.isna(v) else int(v) for v in df["volume"]],
+    }
+
+
+@app.get("/scatter")
+def scatter(universe: str = U):
+    """Risk/Return scatter: one point per strategy — x=volatility, y=ann_return."""
+    ctx    = _get(universe)
+    gross  = ctx["bt_gross"]
+    net    = ctx["bt_net"]
+    tiktok = ctx["bt_tiktok"]
+    ew_r   = gross["equal_weight_returns"]
+
+    def _point(rets, label, color):
+        tr     = m.total_return(rets)
+        n_yrs  = len(rets) / 252
+        ann    = float((1 + tr) ** (1 / n_yrs) - 1) if n_yrs > 0 else 0.0
+        vol    = float(np.std(rets) * np.sqrt(252) * 100)
+        sharpe = m.sharpe(rets)
+        return {
+            "label":      label,
+            "color":      color,
+            "x":          round(vol, 2),
+            "y":          round(ann * 100, 2),
+            "sharpe":     round(sharpe, 2),
+        }
+
+    return {"points": [
+        _point(gross["portfolio_returns"],  "SMA (gross)",   "#3fb950"),
+        _point(net["portfolio_returns"],    "SMA (net)",     "#56d364"),
+        _point(tiktok["portfolio_returns"], "TikTok",        "#ffa657"),
+        _point(gross["benchmark_returns"],  "EGX30",         "#f85149"),
+        _point(ew_r,                        "Equal Weight",  "#d2a8ff"),
+    ]}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# AI CHATBOT — Gemini
+# ══════════════════════════════════════════════════════════════════════════════
+
+import os
+from dotenv import load_dotenv
+from pydantic import BaseModel
+
+load_dotenv()
+
+try:
+    import google.generativeai as genai
+    _GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
+    genai.configure(api_key=_GEMINI_KEY)
+    _gemini_model = genai.GenerativeModel("gemini-1.5-flash")
+    _GEMINI_OK = bool(_GEMINI_KEY)
+except Exception:
+    _GEMINI_OK = False
+
+
+def _build_context(universe: str = "core") -> str:
+    """Build a concise data snapshot to inject into every prompt."""
+    try:
+        ctx   = _get(universe)
+        gross = ctx["bt_gross"]
+        net   = ctx["bt_net"]
+        tik   = ctx["bt_tiktok"]
+        feed  = ctx["feed"]
+
+        def _s(rets, name):
+            tr  = round(m.total_return(rets) * 100, 1)
+            sh  = round(m.sharpe(rets), 2)
+            dd  = round(m.max_drawdown(rets) * 100, 1)
+            return f"{name}: return={tr}%, sharpe={sh}, maxDD={dd}%"
+
+        lines = [
+            f"Universe: {universe} ({feed.n_assets} stocks: {', '.join(feed.symbols)})",
+            f"Date range: {feed.dates[0].date()} → {feed.dates[-1].date()}",
+            f"Commission: {COMMISSION*100}% per turnover",
+            "",
+            "Strategy performance (net of commission where applicable):",
+            _s(gross["portfolio_returns"],  "SMA Crossover (gross)"),
+            _s(net["portfolio_returns"],    "SMA Crossover (net)"),
+            _s(tik["portfolio_returns"],    "TikTok Contrarian"),
+            _s(gross["benchmark_returns"],  "EGX30 Benchmark"),
+            _s(gross["equal_weight_returns"], "Equal Weight"),
+        ]
+
+        if _model_curves:
+            lines.append("")
+            lines.append("ML model performance (test period only):")
+            for name, curve in _model_curves.items():
+                arr  = np.array(curve)
+                rets = np.zeros(len(arr)); rets[1:] = arr[1:] / arr[:-1] - 1.0
+                lines.append(_s(rets, name.upper()))
+
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Dashboard data unavailable: {e}"
+
+
+SYSTEM_PROMPT = """You are a quantitative finance assistant embedded in an Egyptian stock market (EGX) trading dashboard.
+You have access to real backtest results, strategy metrics, and price data for EGX stocks.
+Answer questions about trading strategies, performance metrics, risk, and the Egyptian stock market.
+Be concise, use numbers from the data provided, and explain concepts clearly.
+You can answer in both Arabic and English depending on the user's language.
+Never give specific investment advice — always clarify these are backtested results, not guarantees.
+"""
+
+
+class ChatMessage(BaseModel):
+    role: str      # "user" or "bot"
+    text: str
+
+class ChatRequest(BaseModel):
+    message:  str
+    universe: str = "core"
+    history:  list[ChatMessage] = []
+
+
+@app.post("/chat")
+async def chat(req: ChatRequest):
+    if not _GEMINI_OK:
+        return {"reply": "Gemini API key not configured. Add GEMINI_API_KEY to your .env file."}
+
+    data_context = _build_context(req.universe)
+
+    # Build conversation history for Gemini
+    history_text = ""
+    if req.history:
+        history_text = "\nConversation so far:\n"
+        for msg in req.history[-10:]:   # last 10 turns max
+            prefix = "User" if msg.role == "user" else "Assistant"
+            history_text += f"{prefix}: {msg.text}\n"
+
+    full_prompt = f"""{SYSTEM_PROMPT}
+
+Current dashboard data:
+{data_context}
+{history_text}
+User: {req.message}
+Assistant:"""
+
+    try:
+        response = _gemini_model.generate_content(full_prompt)
+        return {"reply": response.text}
+    except Exception as e:
+        return {"reply": f"Error: {str(e)}"}
